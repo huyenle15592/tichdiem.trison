@@ -62,6 +62,7 @@ function AdminView() {
 
 function LoginGate({ onOk }: { onOk: () => void }) {
   const [pwd, setPwd] = useState("");
+  const [show, setShow] = useState(false);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwd === PASSWORD) { sessionStorage.setItem(AUTH_KEY, "1"); onOk(); }
@@ -79,7 +80,28 @@ function LoginGate({ onOk }: { onOk: () => void }) {
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>
         <Label className="text-sm font-bold">Mật khẩu cửa hàng</Label>
-        <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} className="mt-2 h-12 rounded-xl border-2 text-base" placeholder="••••••••" autoFocus />
+        <div className="relative mt-2">
+          <Input
+            type={show ? "text" : "password"}
+            value={pwd}
+            onChange={(e) => setPwd(e.target.value)}
+            className="h-12 rounded-xl border-2 pr-12 text-base"
+            placeholder="••••••••"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} className="h-4 w-4 accent-brand-red" />
+          Hiện mật khẩu để xem đúng chưa
+        </label>
         <Button type="submit" className="mt-5 h-12 w-full rounded-xl bg-brand-red text-base font-bold text-brand-red-foreground hover:bg-brand-red/90">
           Đăng nhập
         </Button>
