@@ -195,9 +195,15 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             const enough = customer.points >= r.points_required;
             return (
               <div key={r.id} className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
-                <div className="flex h-32 items-center justify-center text-5xl" style={{ background: "linear-gradient(135deg, oklch(0.95 0.03 27), oklch(0.96 0.04 60))" }}>
-                  🎁
-                </div>
+                {r.image_url ? (
+                  <div className="h-36 overflow-hidden bg-muted">
+                    <img src={r.image_url} alt={r.name} className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="flex h-32 items-center justify-center text-5xl" style={{ background: "linear-gradient(135deg, oklch(0.95 0.03 27), oklch(0.96 0.04 60))" }}>
+                    🎁
+                  </div>
+                )}
                 <div className="p-4">
                   <h3 className="font-bold leading-tight text-foreground">{r.name}</h3>
                   {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}
