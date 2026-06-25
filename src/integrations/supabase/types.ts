@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          points: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          points?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          points?: number
+        }
+        Relationships: []
+      }
+      rewards: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          points_required: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          points_required: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          points_required?: number
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          customer_id: string
+          id: string
+          points_change: number
+          reason: string | null
+          staff_name: string | null
+          type: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          points_change: number
+          reason?: string | null
+          staff_name?: string | null
+          type?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          points_change?: number
+          reason?: string | null
+          staff_name?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
