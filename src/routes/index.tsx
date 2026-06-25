@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, Sparkles, Gift, Phone, Award } from "lucide-react";
+import { Search, Sparkles, Gift, Phone, Award, QrCode } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { getTier, formatVnd, normalizePhone } from "@/lib/loyalty";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { QrScannerModal } from "@/components/qr-scanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
