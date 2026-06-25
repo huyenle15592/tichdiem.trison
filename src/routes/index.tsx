@@ -100,7 +100,22 @@ function CustomerView() {
               {loading ? "Đang tra..." : "Tra cứu điểm"}
             </Button>
           </div>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            variant="outline"
+            className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
+          >
+            <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
+          </Button>
         </form>
+
+        <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
 
         {searched && !loading && !customer && (
           <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
