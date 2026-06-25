@@ -20,6 +20,9 @@ import {
   Lock,
   Sparkles,
   Upload,
+  Eye,
+  EyeOff,
+  ImageIcon,
 } from "lucide-react";
 import { formatVnd, getTier, normalizePhone } from "@/lib/loyalty";
 
