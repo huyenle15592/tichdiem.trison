@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, Sparkles, Gift, Phone, Award } from "lucide-react";
+import { Search, Sparkles, Gift, Phone, Award, QrCode } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { getTier, formatVnd, normalizePhone } from "@/lib/loyalty";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { QrScannerModal } from "@/components/qr-scanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Customer = { id: string; name: string; phone: string; points: number };
-type Reward = { id: string; name: string; description: string | null; points_required: number };
+type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
   const [phone, setPhone] = useState("");
@@ -28,12 +29,11 @@ function CustomerView() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
-  async function lookup(e?: React.FormEvent) {
-    e?.preventDefault();
-    const p = normalizePhone(phone);
+  async function lookupBy(p: string) {
     if (p.length < 8) {
-      toast.error("Vui lòng nhập số điện thoại hợp lệ");
+      toast.error("Số điện thoại / mã QR không hợp lệ");
       return;
     }
     setLoading(true);
@@ -45,6 +45,19 @@ function CustomerView() {
     setCustomer((cust as Customer) ?? null);
     setRewards((rws as Reward[]) ?? []);
     setLoading(false);
+  }
+  async function lookup(e?: React.FormEvent) {
+    e?.preventDefault();
+    await lookupBy(normalizePhone(phone));
+  }
+
+  function handleQrResult(text: string) {
+    setQrOpen(false);
+    // Accept raw phone, or formats like "tel:0907..." or "trison:phone:0907..."
+    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
+    const p = normalizePhone(cleaned);
+    setPhone(p);
+    lookupBy(p);
   }
 
   return (
@@ -87,7 +100,22 @@ function CustomerView() {
               {loading ? "Đang tra..." : "Tra cứu điểm"}
             </Button>
           </div>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            variant="outline"
+            className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
+          >
+            <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
+          </Button>
         </form>
+
+        <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
 
         {searched && !loading && !customer && (
           <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
@@ -167,9 +195,15 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             const enough = customer.points >= r.points_required;
             return (
               <div key={r.id} className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
-                <div className="flex h-32 items-center justify-center text-5xl" style={{ background: "linear-gradient(135deg, oklch(0.95 0.03 27), oklch(0.96 0.04 60))" }}>
-                  🎁
-                </div>
+                {r.image_url ? (
+                  <div className="h-36 overflow-hidden bg-muted">
+                    <img src={r.image_url} alt={r.name} className="h-full w-full object-cover" loading="lazy" />
+                  </div>
+                ) : (
+                  <div className="flex h-32 items-center justify-center text-5xl" style={{ background: "linear-gradient(135deg, oklch(0.95 0.03 27), oklch(0.96 0.04 60))" }}>
+                    🎁
+                  </div>
+                )}
                 <div className="p-4">
                   <h3 className="font-bold leading-tight text-foreground">{r.name}</h3>
                   {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}

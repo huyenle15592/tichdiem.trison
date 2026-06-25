@@ -20,6 +20,9 @@ import {
   Lock,
   Sparkles,
   Upload,
+  Eye,
+  EyeOff,
+  ImageIcon,
 } from "lucide-react";
 import { formatVnd, getTier, normalizePhone } from "@/lib/loyalty";
 
@@ -59,6 +62,7 @@ function AdminView() {
 
 function LoginGate({ onOk }: { onOk: () => void }) {
   const [pwd, setPwd] = useState("");
+  const [show, setShow] = useState(false);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwd === PASSWORD) { sessionStorage.setItem(AUTH_KEY, "1"); onOk(); }
@@ -76,7 +80,28 @@ function LoginGate({ onOk }: { onOk: () => void }) {
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>
         <Label className="text-sm font-bold">Mật khẩu cửa hàng</Label>
-        <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} className="mt-2 h-12 rounded-xl border-2 text-base" placeholder="••••••••" autoFocus />
+        <div className="relative mt-2">
+          <Input
+            type={show ? "text" : "password"}
+            value={pwd}
+            onChange={(e) => setPwd(e.target.value)}
+            className="h-12 rounded-xl border-2 pr-12 text-base"
+            placeholder="••••••••"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} className="h-4 w-4 accent-brand-red" />
+          Hiện mật khẩu để xem đúng chưa
+        </label>
         <Button type="submit" className="mt-5 h-12 w-full rounded-xl bg-brand-red text-base font-bold text-brand-red-foreground hover:bg-brand-red/90">
           Đăng nhập
         </Button>
@@ -519,13 +544,14 @@ function HistorySection() {
   );
 }
 
-type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean };
+type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean; image_url: string | null };
 
 function RewardsSection() {
   const [items, setItems] = useState<Reward[]>([]);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [pts, setPts] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   async function load() {
     const { data } = await supabase.from("rewards").select("*").order("points_required");
@@ -533,13 +559,41 @@ function RewardsSection() {
   }
   useEffect(() => { load(); }, []);
 
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 800 * 1024) {
+      toast.error("Ảnh quá lớn (tối đa 800KB). Hãy dùng URL hoặc nén ảnh trước.");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setImageUrl(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
   async function add(e: React.FormEvent) {
     e.preventDefault();
     const p = Number(pts);
     if (!name.trim() || !p) { toast.error("Vui lòng nhập tên và số điểm"); return; }
-    const { error } = await supabase.from("rewards").insert({ name: name.trim(), description: desc || null, points_required: p, active: true });
+    const { error } = await supabase.from("rewards").insert({
+      name: name.trim(),
+      description: desc || null,
+      points_required: p,
+      image_url: imageUrl || null,
+      active: true,
+    });
     if (error) toast.error(error.message);
-    else { toast.success("Đã thêm quà tặng"); setName(""); setDesc(""); setPts(""); load(); }
+    else { toast.success("Đã thêm quà tặng"); setName(""); setDesc(""); setPts(""); setImageUrl(""); load(); }
+  }
+
+  async function updateImage(id: string) {
+    const url = prompt("Dán URL hình ảnh quà tặng (https://...):", "");
+    if (url === null) return;
+    const { error } = await supabase.from("rewards").update({ image_url: url || null }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Đã cập nhật hình ảnh"); load(); }
   }
 
   async function remove(id: string) {
@@ -551,23 +605,60 @@ function RewardsSection() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Cài đặt quà tặng</h1>
-      <form onSubmit={add} className="grid gap-3 rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)] md:grid-cols-[2fr_2fr_1fr_auto]">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên quà tặng" className="h-12 rounded-xl border-2" />
-        <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Mô tả" className="h-12 rounded-xl border-2" />
-        <Input value={pts} onChange={(e) => setPts(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Điểm cần" className="h-12 rounded-xl border-2" />
-        <Button type="submit" className="h-12 rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm</Button>
+
+      <form onSubmit={add} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+        <div className="grid gap-3 md:grid-cols-[2fr_2fr_1fr_auto]">
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên quà tặng" className="h-12 rounded-xl border-2" />
+          <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Mô tả" className="h-12 rounded-xl border-2" />
+          <Input value={pts} onChange={(e) => setPts(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Điểm cần" className="h-12 rounded-xl border-2" />
+          <Button type="submit" className="h-12 rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm</Button>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+          <Input
+            value={imageUrl.startsWith("data:") ? "" : imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="URL hình ảnh / poster minh hoạ (https://...)"
+            className="h-12 rounded-xl border-2"
+          />
+          <label className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-brand-navy/30 px-4 text-sm font-bold text-brand-navy hover:bg-accent">
+            <Upload className="h-4 w-4" /> Tải ảnh từ máy
+            <input type="file" accept="image/*" className="hidden" onChange={onPickFile} />
+          </label>
+          {imageUrl && (
+            <Button type="button" variant="ghost" onClick={() => setImageUrl("")} className="h-12 rounded-xl text-brand-red">Xoá ảnh</Button>
+          )}
+        </div>
+        {imageUrl && (
+          <div className="mt-3 overflow-hidden rounded-xl border bg-muted">
+            <img src={imageUrl} alt="Xem trước" className="h-40 w-full object-cover" />
+          </div>
+        )}
+        <p className="mt-2 text-xs text-muted-foreground">Hỗ trợ URL hoặc tải ảnh tối đa 800KB (.jpg, .png, .webp).</p>
       </form>
 
       <div className="grid gap-3 md:grid-cols-2">
         {items.map((r) => (
-          <div key={r.id} className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-soft)]">
-            <div className="flex items-start justify-between gap-2">
+          <div key={r.id} className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
+            {r.image_url ? (
+              <img src={r.image_url} alt={r.name} className="h-40 w-full object-cover" />
+            ) : (
+              <div className="flex h-40 items-center justify-center bg-muted text-muted-foreground">
+                <ImageIcon className="h-10 w-10 opacity-40" />
+              </div>
+            )}
+            <div className="flex items-start justify-between gap-2 p-4">
               <div>
                 <div className="font-black text-foreground">{r.name}</div>
                 {r.description && <div className="text-sm text-muted-foreground">{r.description}</div>}
                 <div className="mt-2 text-sm font-bold text-brand-red">{r.points_required} điểm</div>
               </div>
-              <Button onClick={() => remove(r.id)} variant="ghost" size="sm" className="text-brand-red">Xoá</Button>
+              <div className="flex flex-col gap-1">
+                <Button onClick={() => updateImage(r.id)} variant="ghost" size="sm" className="text-brand-navy">
+                  <ImageIcon className="mr-1 h-4 w-4" /> Ảnh
+                </Button>
+                <Button onClick={() => remove(r.id)} variant="ghost" size="sm" className="text-brand-red">Xoá</Button>
+              </div>
             </div>
           </div>
         ))}
