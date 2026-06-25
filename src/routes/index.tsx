@@ -46,28 +46,18 @@ function CustomerView() {
     setRewards((rws as Reward[]) ?? []);
     setLoading(false);
   }
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [searched, setSearched] = useState(false);
-
   async function lookup(e?: React.FormEvent) {
     e?.preventDefault();
-    const p = normalizePhone(phone);
-    if (p.length < 8) {
-      toast.error("Vui lòng nhập số điện thoại hợp lệ");
-      return;
-    }
-    setLoading(true);
-    setSearched(true);
-    const [{ data: cust }, { data: rws }] = await Promise.all([
-      supabase.from("customers").select("*").eq("phone", p).maybeSingle(),
-      supabase.from("rewards").select("*").eq("active", true).order("points_required"),
-    ]);
-    setCustomer((cust as Customer) ?? null);
-    setRewards((rws as Reward[]) ?? []);
-    setLoading(false);
+    await lookupBy(normalizePhone(phone));
+  }
+
+  function handleQrResult(text: string) {
+    setQrOpen(false);
+    // Accept raw phone, or formats like "tel:0907..." or "trison:phone:0907..."
+    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
+    const p = normalizePhone(cleaned);
+    setPhone(p);
+    lookupBy(p);
   }
 
   return (
