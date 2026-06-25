@@ -21,9 +21,31 @@ export const Route = createFileRoute("/")({
 });
 
 type Customer = { id: string; name: string; phone: string; points: number };
-type Reward = { id: string; name: string; description: string | null; points_required: number };
+type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [searched, setSearched] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  async function lookupBy(p: string) {
+    if (p.length < 8) {
+      toast.error("Số điện thoại / mã QR không hợp lệ");
+      return;
+    }
+    setLoading(true);
+    setSearched(true);
+    const [{ data: cust }, { data: rws }] = await Promise.all([
+      supabase.from("customers").select("*").eq("phone", p).maybeSingle(),
+      supabase.from("rewards").select("*").eq("active", true).order("points_required"),
+    ]);
+    setCustomer((cust as Customer) ?? null);
+    setRewards((rws as Reward[]) ?? []);
+    setLoading(false);
+  }
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
