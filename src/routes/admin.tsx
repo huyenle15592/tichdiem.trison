@@ -766,3 +766,211 @@ function RewardsSection() {
     </div>
   );
 }
+
+// ============================================================
+// Birthday helpers + components
+// ============================================================
+
+const VN_MONTHS = [
+  "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+  "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
+];
+
+function formatBirth(iso: string): string {
+  // iso = "YYYY-MM-DD"
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
+
+function BirthdaysThisMonth() {
+  const [items, setItems] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .not("birth_date", "is", null);
+      if (!mounted) return;
+      const list = ((data as Customer[]) ?? [])
+        .filter((c) => {
+          if (!c.birth_date) return false;
+          const month = Number(c.birth_date.split("-")[1]);
+          return month === currentMonth;
+        })
+        .sort((a, b) => {
+          const da = Number(a.birth_date!.split("-")[2]);
+          const db = Number(b.birth_date!.split("-")[2]);
+          return da - db;
+        });
+      setItems(list);
+      setLoading(false);
+    })();
+    return () => { mounted = false; };
+  }, [currentMonth]);
+
+  async function copyPhone(phone: string) {
+    try {
+      await navigator.clipboard.writeText(phone);
+      toast.success(`Đã sao chép ${phone}`);
+    } catch {
+      toast.error("Không thể sao chép");
+    }
+  }
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border-2 p-5 shadow-[var(--shadow-card)]"
+      style={{
+        borderColor: "var(--brand-red)",
+        background:
+          "linear-gradient(135deg, oklch(0.98 0.02 27) 0%, oklch(0.96 0.04 60) 100%)",
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-lg font-black text-brand-red md:text-xl">
+          <Cake className="h-6 w-6" />
+          🎉 KHÁCH HÀNG SINH NHẬT TRONG {VN_MONTHS[currentMonth - 1].toUpperCase()}
+        </h2>
+        <span className="rounded-full bg-brand-red px-3 py-1 text-xs font-black text-brand-red-foreground">
+          {items.length} khách
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 text-sm text-muted-foreground">Đang tải...</div>
+      ) : items.length === 0 ? (
+        <div className="mt-4 rounded-xl bg-white/60 p-6 text-center text-sm font-semibold text-muted-foreground">
+          Tháng này chưa có khách hàng nào sinh nhật.
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {items.map((c) => (
+            <div key={c.id} className="rounded-xl border bg-card p-3 shadow-[var(--shadow-soft)]">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate font-black text-brand-navy">{c.name}</div>
+                  <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
+                  <div className="mt-1 text-xs font-bold text-brand-red">
+                    🎂 Sinh ngày {formatBirth(c.birth_date!)}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button onClick={() => copyPhone(c.phone)} size="sm" variant="outline" className="h-9 rounded-lg text-xs font-bold">
+                  <Copy className="mr-1 h-3.5 w-3.5" /> Copy SĐT
+                </Button>
+                <a href={`tel:${c.phone}`} className="inline-flex h-9 items-center gap-1 rounded-lg bg-brand-navy px-3 text-xs font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
+                  <Phone className="h-3.5 w-3.5" /> Gọi
+                </a>
+                <a href={`https://zalo.me/${c.phone}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#0068ff] px-3 text-xs font-bold text-white hover:opacity-90">
+                  <MessageCircle className="h-3.5 w-3.5" /> Zalo
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditCustomerModal({
+  customer,
+  onClose,
+  onSaved,
+}: {
+  customer: Customer;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(customer.name);
+  const [phone, setPhone] = useState(customer.phone);
+  const [birth, setBirth] = useState(customer.birth_date ?? "");
+  const [points, setPoints] = useState(String(customer.points));
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    const p = normalizePhone(phone);
+    if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
+    setBusy(true);
+    const { error } = await supabase
+      .from("customers")
+      .update({
+        name: name.trim(),
+        phone: p,
+        birth_date: birth || null,
+        points: Number(points) || 0,
+      })
+      .eq("id", customer.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Đã cập nhật khách hàng");
+    onSaved();
+  }
+
+  async function remove() {
+    if (!confirm(`Xoá khách hàng ${customer.name}? Lịch sử giao dịch liên quan sẽ vẫn còn.`)) return;
+    const { error } = await supabase.from("customers").delete().eq("id", customer.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Đã xoá khách hàng");
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <form
+        onSubmit={save}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl bg-card p-6 shadow-[var(--shadow-card)]"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-black text-brand-navy">Chỉnh sửa khách hàng</h3>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-accent" aria-label="Đóng">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">Họ và tên</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">Số điện thoại</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
+            <Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">Số điểm hiện tại</Label>
+            <Input
+              inputMode="numeric"
+              value={points}
+              onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ""))}
+              className="mt-1 h-12 rounded-xl border-2"
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          <Button type="button" onClick={remove} variant="ghost" className="text-brand-red">Xoá</Button>
+          <div className="flex-1" />
+          <Button type="button" variant="ghost" onClick={onClose}>Huỷ</Button>
+          <Button type="submit" disabled={busy} className="bg-brand-navy font-bold text-brand-navy-foreground">
+            {busy ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
