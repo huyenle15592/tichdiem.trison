@@ -29,11 +29,15 @@ import {
   MessageCircle,
   Pencil,
   X,
+  Crown,
+  Save,
 } from "lucide-react";
-import { formatVnd, getTier, normalizePhone, cardWindow } from "@/lib/loyalty";
+import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
+import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
