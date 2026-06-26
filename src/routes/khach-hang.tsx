@@ -24,7 +24,7 @@ export const Route = createFileRoute("/khach-hang")({
   component: CustomerView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number; created_at: string };
+type Customer = { id: string; name: string; phone: string; points: number; created_at: string; activated_at: string | null };
 type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
