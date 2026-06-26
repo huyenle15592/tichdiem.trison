@@ -317,7 +317,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
           <>
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm font-semibold text-muted-foreground">
-                Tiến trình lên hạng {tier.next === 50 ? "Vàng" : "Kim Cương"}
+                Tiến trình lên hạng {tier.key === "silver" ? "Vàng" : "Kim Cương"}
               </span>
               <span className="text-sm font-bold text-brand-red">còn {remaining} điểm</span>
             </div>
