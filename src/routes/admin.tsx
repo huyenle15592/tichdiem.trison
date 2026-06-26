@@ -194,7 +194,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { id: "customers", label: "Danh sách khách hàng", icon: Users },
     { id: "history", label: "Lịch sử giao dịch", icon: History },
     { id: "rewards", label: "Cài đặt quà tặng", icon: Gift },
-    { id: "tiers", label: "Cài đặt hạng & Tích điểm", icon: Crown },
+    { id: "tiers", label: "Cài đặt hạng tích điểm", icon: Crown },
   ];
 
 
@@ -1230,7 +1230,7 @@ function TierSettingsSection() {
     <div className="space-y-5">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-black text-brand-navy md:text-3xl">
-          <Crown className="h-7 w-7 text-brand-red" /> Cài đặt hạng & Tích điểm
+          <Crown className="h-7 w-7 text-brand-red" /> Cài đặt hạng tích điểm
         </h1>
         <p className="text-sm text-muted-foreground">
           Tùy chỉnh số điểm cần thiết để khách hàng lên hạng. Thay đổi sẽ tự động áp dụng cho{" "}
