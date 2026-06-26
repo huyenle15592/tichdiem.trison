@@ -1499,6 +1499,17 @@ function EditCustomerModal({
         ? `Đã cập nhật & cộng +${addPoints} điểm`
         : "Đã cập nhật khách hàng",
     );
+    if (addPoints > 0 && !directChanged) {
+      void sendZaloNotification({
+        kind: "add",
+        customerId: customer.id,
+        name: name.trim(),
+        phone: p,
+        pointsAdded: addPoints,
+        totalPoints: finalPoints,
+        txDate: new Date(),
+      });
+    }
     onSaved();
   }
 
