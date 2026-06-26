@@ -30,7 +30,8 @@ import {
   Pencil,
   X,
 } from "lucide-react";
-import { formatVnd, getTier, normalizePhone, formatVnDate, addOneYearIso } from "@/lib/loyalty";
+import { formatVnd, getTier, normalizePhone, cardWindow } from "@/lib/loyalty";
+import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/admin")({
