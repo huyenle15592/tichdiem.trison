@@ -1389,7 +1389,7 @@ function ExpiringCardsSoon() {
           Không có khách nào sắp hết hạn thẻ trong 30 ngày tới.
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+        <div className="mt-4 hidden overflow-x-auto rounded-xl border bg-card md:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
