@@ -95,7 +95,7 @@ function PortalCard({
   return (
     <Link
       to={to}
-      className="group relative block overflow-hidden rounded-[28px] border border-border/70 bg-white p-8 text-left transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:p-10"
+      className="group relative block overflow-hidden rounded-3xl border border-border/70 bg-white p-6 text-left transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:rounded-[28px] sm:p-8 md:p-10"
       style={{
         boxShadow: "var(--shadow-float)",
         // @ts-expect-error custom prop
