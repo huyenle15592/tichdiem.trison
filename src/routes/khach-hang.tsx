@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { getTier, formatVnd, normalizePhone } from "@/lib/loyalty";
+import { getTier, formatVnd, normalizePhone, formatVnDate, addOneYearIso } from "@/lib/loyalty";
+import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/khach-hang")({
   component: CustomerView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number };
+type Customer = { id: string; name: string; phone: string; points: number; created_at: string };
 type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
@@ -143,12 +144,74 @@ function CustomerView() {
   );
 }
 
+type TierTheme = {
+  bg: string;
+  text: string;
+  subtext: string;
+  pointsColor: string;
+  progressTrack: string;
+  progressFill: string;
+  logoBg: string;
+  lotus: "pink" | "gold" | "silver";
+};
+
+const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
+  silver: {
+    bg:
+      "linear-gradient(135deg, #ffffff 0%, #f1f3f7 45%, #d9dde4 100%)",
+    text: "#0a1e3f",
+    subtext: "rgba(10, 30, 63, 0.7)",
+    pointsColor: "#b8860b",
+    progressTrack: "rgba(10, 30, 63, 0.12)",
+    progressFill: "linear-gradient(90deg, #b8860b, #f6c945)",
+    logoBg: "#ffffff",
+    lotus: "pink",
+  },
+  gold: {
+    bg:
+      "radial-gradient(ellipse at 30% 30%, #fff2c2 0%, transparent 55%), linear-gradient(135deg, #c9962b 0%, #f6cf64 45%, #a87a2c 100%)",
+    text: "#3a1f0a",
+    subtext: "rgba(58, 31, 10, 0.78)",
+    pointsColor: "#7a1414",
+    progressTrack: "rgba(58, 31, 10, 0.18)",
+    progressFill: "linear-gradient(90deg, #7a1414, #c9962b)",
+    logoBg: "#fff8e3",
+    lotus: "pink",
+  },
+  diamond: {
+    bg:
+      "radial-gradient(ellipse at 25% 20%, #2a2a2a 0%, transparent 60%), linear-gradient(135deg, #050505 0%, #1a1a1a 50%, #2e2e2e 100%)",
+    text: "#f5f5f5",
+    subtext: "rgba(245, 245, 245, 0.7)",
+    pointsColor: "#e9ecf2",
+    progressTrack: "rgba(255, 255, 255, 0.15)",
+    progressFill: "linear-gradient(90deg, #ffffff, #cfd3dc)",
+    logoBg: "#ffffff",
+    lotus: "pink",
+  },
+};
+
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
   const tier = getTier(customer.points);
+  const theme = TIER_THEMES[tier.key];
   const progress = tier.next
     ? Math.min(100, ((customer.points - tier.min) / (tier.next - tier.min)) * 100)
     : 100;
   const remaining = tier.next ? tier.next - customer.points : 0;
+
+  const memberSince = formatVnDate(customer.created_at);
+  const validThrough = formatVnDate(addOneYearIso(customer.created_at));
+
+  // gold-style sparkle texture for Gold tier
+  const goldTexture =
+    tier.key === "gold"
+      ? {
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.55) 0.6px, transparent 0.7px), radial-gradient(rgba(122,20,20,0.18) 0.5px, transparent 0.6px)",
+          backgroundSize: "5px 5px, 9px 9px",
+          backgroundPosition: "0 0, 2px 3px",
+        }
+      : undefined;
 
   return (
     <div className="mt-6 space-y-6">
@@ -156,29 +219,82 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         Xin chào, <span className="text-brand-red">{customer.name}</span> 👋
       </p>
 
-      <div className="relative overflow-hidden rounded-3xl p-6 shadow-[var(--shadow-card)]" style={{ background: tier.gradient, color: tier.text }}>
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20" style={{ background: tier.accent }} />
-        <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full opacity-10" style={{ background: tier.accent }} />
-        <div className="relative flex items-start justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-widest opacity-75">Thẻ thành viên</div>
-            <div className="mt-1 flex items-center gap-2 text-xl font-black">
-              <Award className="h-5 w-5" style={{ color: tier.accent }} />
-              Hạng {tier.name}
+      {/* Lotusmiles-style member card */}
+      <div
+        className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
+        style={{ background: theme.bg, color: theme.text, aspectRatio: "1.586 / 1", minHeight: 230 }}
+      >
+        {/* Gold sparkle overlay */}
+        {goldTexture && <div className="absolute inset-0 opacity-60" style={goldTexture} />}
+        {/* Lotus motif */}
+        <LotusBg tone={theme.lotus} />
+
+        {/* Content */}
+        <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
+          {/* Top: logo + tier name */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl p-1 shadow-sm md:h-14 md:w-14"
+              style={{ background: theme.logoBg }}
+            >
+              <img src={trisonLogo.url} alt="Trí Sơn" className="h-full w-full object-contain" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
+                Yến Sào
+              </div>
+              <div className="text-base font-light tracking-[0.2em] md:text-lg" style={{ fontFamily: "'Times New Roman', serif" }}>
+                TRÍ SƠN {tier.enName}
+              </div>
             </div>
           </div>
-          <div className="text-right text-xs font-semibold uppercase tracking-wider opacity-75">Trí Sơn</div>
-        </div>
-        <div className="relative mt-6 text-center">
-          <div className="text-6xl font-black leading-none md:text-7xl">{customer.points}</div>
-          <div className="mt-1 text-base font-bold opacity-90">ĐIỂM</div>
-          <div className="mt-2 text-xs opacity-75">Tương đương mức chi tiêu {formatVnd(customer.points * 100000)}</div>
-        </div>
-        <div className="relative mt-6 font-mono text-sm tracking-widest opacity-80">
-          •••• •••• {customer.phone.slice(-4)}
+
+          {/* Middle: big points */}
+          <div className="-mt-2 text-center md:-mt-4">
+            <div
+              className="font-bold leading-none"
+              style={{
+                fontFamily: "'Times New Roman', serif",
+                fontSize: "clamp(3rem, 13vw, 5.5rem)",
+                color: theme.pointsColor,
+                textShadow:
+                  tier.key === "diamond"
+                    ? "0 1px 0 rgba(255,255,255,0.25)"
+                    : "0 1px 0 rgba(255,255,255,0.35)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {customer.points}
+            </div>
+            <div
+              className="mt-1 text-xs font-semibold tracking-[0.4em] md:text-sm"
+              style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
+            >
+              ĐIỂM
+            </div>
+            {/* faint progress bar */}
+            <div className="mx-auto mt-3 h-1 w-3/4 overflow-hidden rounded-full" style={{ background: theme.progressTrack }}>
+              <div className="h-full rounded-full" style={{ width: `${progress}%`, background: theme.progressFill }} />
+            </div>
+          </div>
+
+          {/* Bottom: dates + name */}
+          <div>
+            <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
+              <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
+              <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
+            </div>
+            <div
+              className="mt-1 truncate text-lg font-semibold uppercase tracking-[0.15em] md:text-2xl"
+              style={{ fontFamily: "'Times New Roman', serif", color: theme.text }}
+            >
+              {customer.name}
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Progress / tier-up panel */}
       <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
         {tier.next ? (
           <>
@@ -190,9 +306,12 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             </div>
             <Progress value={progress} className="h-3 rounded-full" />
             <div className="mt-2 flex justify-between text-xs font-medium text-muted-foreground">
-              <span>{tier.min}đ</span>
-              <span>{tier.next}đ</span>
+              <span>{tier.min} điểm</span>
+              <span>{tier.next} điểm</span>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Tương đương mức chi tiêu {formatVnd(customer.points * 100000)}
+            </p>
           </>
         ) : (
           <p className="text-center text-sm font-bold text-brand-navy">🎉 Bạn đã đạt hạng cao nhất - Kim Cương!</p>
