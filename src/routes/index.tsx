@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Crown, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
-import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
+import { Crown, ShieldCheck, ArrowRight } from "lucide-react";
+import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import { LotusScene } from "@/components/lotus-scene";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,21 +20,20 @@ export const Route = createFileRoute("/")({
 function PortalView() {
   return (
     <div
-      className="min-h-screen"
+      className="relative min-h-screen"
       style={{
         background:
           "radial-gradient(1200px 600px at 10% -10%, oklch(0.95 0.04 27 / 0.6), transparent 60%), radial-gradient(1000px 500px at 110% 10%, oklch(0.9 0.05 260 / 0.5), transparent 60%), oklch(0.97 0.005 260)",
       }}
     >
-      <header className="mx-auto max-w-6xl px-5 pt-8 pb-2 text-center md:pt-14">
+      <LotusScene />
+      <header className="relative mx-auto max-w-6xl px-5 pt-8 pb-2 text-center md:pt-14">
         <img
           src={trisonLogo.url}
           alt="Yến sào Trí Sơn"
-          className="mx-auto h-28 w-auto md:h-36 drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+          className="mx-auto h-28 w-auto md:h-40 drop-shadow-[0_10px_24px_rgba(0,0,0,0.14)]"
+          style={{ mixBlendMode: "multiply" }}
         />
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-navy/15 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy shadow-[var(--shadow-soft)] backdrop-blur">
-          <Sparkles className="h-3.5 w-3.5 text-brand-red" /> Thương hiệu cao cấp
-        </div>
         <h1 className="mt-5 text-3xl font-black leading-tight text-brand-navy md:text-5xl">
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
