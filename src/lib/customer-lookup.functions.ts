@@ -9,7 +9,7 @@ export const lookupCustomerByPhone = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("customers")
-      .select("id, name, phone, points")
+      .select("id, name, phone, points, created_at")
       .eq("phone", data.phone)
       .maybeSingle();
     if (error) throw new Error(error.message);

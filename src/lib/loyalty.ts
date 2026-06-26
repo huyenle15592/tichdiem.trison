@@ -1,41 +1,21 @@
+export type TierKey = "silver" | "gold" | "diamond";
+
 export type Tier = {
+  key: TierKey;
   name: string;
+  enName: string;
   min: number;
   next: number | null;
-  gradient: string;
-  text: string;
-  accent: string;
 };
 
 export function getTier(points: number): Tier {
   if (points >= 200) {
-    return {
-      name: "Kim Cương",
-      min: 200,
-      next: null,
-      gradient: "linear-gradient(135deg, #0a0a0a 0%, #2a2a2a 45%, #4a4a4a 100%)",
-      text: "#ffffff",
-      accent: "#d4af37",
-    };
+    return { key: "diamond", name: "Kim Cương", enName: "DIAMOND", min: 200, next: null };
   }
   if (points >= 50) {
-    return {
-      name: "Vàng",
-      min: 50,
-      next: 200,
-      gradient: "linear-gradient(135deg, #b8860b 0%, #f6c945 50%, #d4af37 100%)",
-      text: "#1a1a1a",
-      accent: "#7c5a00",
-    };
+    return { key: "gold", name: "Vàng", enName: "GOLD", min: 50, next: 200 };
   }
-  return {
-    name: "Bạc",
-    min: 0,
-    next: 50,
-    gradient: "linear-gradient(135deg, #8a8e96 0%, #d8dce2 50%, #a7adb5 100%)",
-    text: "#1a1a1a",
-    accent: "#3a3f47",
-  };
+  return { key: "silver", name: "Bạc", enName: "SILVER", min: 0, next: 50 };
 }
 
 export const formatVnd = (n: number) =>
@@ -43,3 +23,26 @@ export const formatVnd = (n: number) =>
 
 export const normalizePhone = (raw: string) =>
   raw.replace(/[^0-9]/g, "");
+
+export function formatVnDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    // try YYYY-MM-DD
+    const [y, m, day] = String(iso).split("-");
+    if (y && m && day) return `${day}/${m}/${y}`;
+    return "—";
+  }
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+export function addOneYearIso(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString();
+}
