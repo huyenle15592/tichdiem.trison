@@ -602,7 +602,7 @@ function CustomersSection() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="hidden rounded-full px-3 py-1 text-xs font-bold sm:inline" style={{ background: tier.gradient, color: tier.text }}>
+                  <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${tierPillClass(tier.key)}`}>
                     {tier.name}
                   </span>
                   <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
