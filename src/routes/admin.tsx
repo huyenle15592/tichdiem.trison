@@ -1531,7 +1531,9 @@ function EditCustomerModal({
 }) {
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone);
-  const [birth, setBirth] = useState(customer.birth_date ?? "");
+  const initBirth = customerBirth(customer);
+  const [birthDay, setBirthDay] = useState(initBirth ? String(initBirth.day) : "");
+  const [birthMonth, setBirthMonth] = useState(initBirth ? String(initBirth.month) : "");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
