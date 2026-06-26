@@ -17,6 +17,8 @@ export type Database = {
       customers: {
         Row: {
           birth_date: string | null
+          birth_day: number | null
+          birth_month: number | null
           created_at: string
           id: string
           name: string
@@ -25,6 +27,8 @@ export type Database = {
         }
         Insert: {
           birth_date?: string | null
+          birth_day?: number | null
+          birth_month?: number | null
           created_at?: string
           id?: string
           name: string
@@ -33,6 +37,8 @@ export type Database = {
         }
         Update: {
           birth_date?: string | null
+          birth_day?: number | null
+          birth_month?: number | null
           created_at?: string
           id?: string
           name?: string
