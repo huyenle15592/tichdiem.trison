@@ -283,9 +283,11 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
         <div className="mx-auto max-w-5xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
-          {section === "customers" && <CustomersSection />}
+          {section === "customers" && <CustomersSection staff={staff} />}
           {section === "history" && <HistorySection />}
           {section === "rewards" && <RewardsSection />}
+          {section === "tiers" && <TierSettingsSection />}
+
         </div>
       </main>
     </div>
