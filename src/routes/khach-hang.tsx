@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { getTier, formatVnd, normalizePhone, formatVnDate, addOneYearIso } from "@/lib/loyalty";
+import { getTier, formatVnd, normalizePhone, cardWindow } from "@/lib/loyalty";
 import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/khach-hang")({
   component: CustomerView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number; created_at: string };
+type Customer = { id: string; name: string; phone: string; points: number; created_at: string; activated_at: string | null };
 type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
@@ -199,8 +199,10 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
     : 100;
   const remaining = tier.next ? tier.next - customer.points : 0;
 
-  const memberSince = formatVnDate(customer.created_at);
-  const validThrough = formatVnDate(addOneYearIso(customer.created_at));
+  const win = cardWindow(customer.activated_at);
+  const memberSince = win.memberSince;
+  const validThrough = win.validThrough;
+  const activated = win.activated;
 
   // gold-style sparkle texture for Gold tier
   const goldTexture =
@@ -280,10 +282,19 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
 
           {/* Bottom: dates + name */}
           <div>
-            <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
-              <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
-              <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
-            </div>
+            {activated ? (
+              <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
+                <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
+                <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
+              </div>
+            ) : (
+              <div
+                className="text-[11px] font-light italic tracking-[0.15em] md:text-xs"
+                style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
+              >
+                Kích hoạt sau lần tích điểm đầu tiên
+              </div>
+            )}
             <div
               className="mt-1 truncate text-lg font-semibold uppercase tracking-[0.15em] md:text-2xl"
               style={{ fontFamily: "'Times New Roman', serif", color: theme.text }}

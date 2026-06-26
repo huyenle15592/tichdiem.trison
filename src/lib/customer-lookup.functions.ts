@@ -13,5 +13,20 @@ export const lookupCustomerByPhone = createServerFn({ method: "POST" })
       .eq("phone", data.phone)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row;
+    if (!row) return null;
+
+    // Find the FIRST point-earning transaction (activation date).
+    const { data: firstAdd } = await supabaseAdmin
+      .from("transactions")
+      .select("created_at")
+      .eq("customer_id", row.id)
+      .gt("points_change", 0)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      ...row,
+      activated_at: (firstAdd?.created_at as string | undefined) ?? null,
+    };
   });
