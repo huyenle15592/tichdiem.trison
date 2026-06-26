@@ -10,7 +10,7 @@ import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
-import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
+
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QRCodeSVG } from "qrcode.react";
