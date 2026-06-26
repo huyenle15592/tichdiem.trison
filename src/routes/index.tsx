@@ -21,17 +21,17 @@ function PortalView() {
   return (
     <div className="relative min-h-screen bg-transparent">
       <LotusScene />
-      <header className="relative mx-auto max-w-6xl px-5 pt-10 pb-2 text-center md:pt-14">
+      <header className="relative mx-auto max-w-6xl px-4 pt-6 pb-1 text-center sm:px-5 sm:pt-10 md:pt-14">
         <img
           src={trisonLogo.url}
           alt="Yến sào Trí Sơn"
-          className="mx-auto h-40 w-auto md:h-56"
+          className="mx-auto h-28 w-auto sm:h-40 md:h-56"
           style={{ mixBlendMode: "multiply" }}
         />
-        <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-4 md:text-6xl">
+        <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight text-brand-navy sm:mt-3 sm:text-4xl md:mt-4 md:text-6xl">
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
+        <p className="mx-auto mt-3 max-w-xl text-sm font-medium text-muted-foreground sm:text-base md:text-lg">
           Hệ thống Tích điểm Thành viên — Tri ân khách hàng{"\u00a0"}
         </p>
       </header>
