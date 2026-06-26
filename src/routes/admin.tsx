@@ -50,7 +50,8 @@ import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { Switch } from "@/components/ui/switch";
 import { sendZaloNotification, loadZnsSettings, saveZnsSettings, DEFAULT_ZNS_SETTINGS, type ZnsSettings } from "@/lib/zalo-zns";
-import { Camera } from "lucide-react";
+import { Camera, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 
 export const Route = createFileRoute("/admin")({
