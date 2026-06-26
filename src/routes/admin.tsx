@@ -1699,8 +1699,26 @@ function EditCustomerModal({
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
           </div>
           <div>
-            <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
-            <Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+            <Label className="text-xs font-bold text-muted-foreground">🎂 Sinh nhật (Ngày &amp; Tháng)</Label>
+            <div className="mt-1 grid grid-cols-2 gap-3">
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={birthDay}
+                onChange={(e) => setBirthDay(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Ngày (1–31)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={birthMonth}
+                onChange={(e) => setBirthMonth(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Tháng (1–12)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Không bắt buộc nhập năm sinh.</div>
           </div>
 
           <div className="rounded-xl border-2 border-brand-red/30 bg-brand-red/5 p-3">
