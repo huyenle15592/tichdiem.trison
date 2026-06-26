@@ -193,15 +193,18 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="relative flex min-h-screen bg-background">
+      <LotusScene />
       <Toaster position="top-center" richColors />
 
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white p-1 shadow-[var(--shadow-soft)]">
-              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
-            </div>
+            <img
+              src={trisonLogo.url}
+              alt="Yến sào Trí Sơn"
+              className="h-12 w-12 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+            />
             <div>
               <div className="text-sm font-black leading-tight">YẾN SÀO</div>
               <div className="text-xs font-bold leading-tight text-sidebar-foreground/70">TRÍ SƠN</div>
@@ -244,9 +247,11 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-0.5">
-              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
-            </div>
+            <img
+              src={trisonLogo.url}
+              alt="Yến sào Trí Sơn"
+              className="h-9 w-9 object-contain"
+            />
             <span className="text-sm font-black">TRÍ SƠN ADMIN</span>
           </div>
           <Button onClick={onLogout} variant="ghost" size="sm" className="text-sidebar-foreground">
