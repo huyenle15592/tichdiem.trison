@@ -1405,7 +1405,7 @@ function QuickAddPointsModal({
     onSaved();
   }
 
-  async function redeem(e: React.FormEvent) {
+  async function redeem(e: React.MouseEvent | React.KeyboardEvent | React.FormEvent) {
     e.preventDefault();
     const code = redeemCode.trim().toUpperCase();
     if (!code) { toast.error("Vui lòng nhập Mã sản phẩm"); return; }
