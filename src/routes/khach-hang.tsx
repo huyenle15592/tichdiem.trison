@@ -177,6 +177,19 @@ function CustomerView() {
   );
 }
 
+const GOLD_METALLIC = {
+  fontFamily: "'Times New Roman', serif",
+  fontWeight: 700,
+  textTransform: "uppercase" as const,
+  backgroundImage:
+    "linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text",
+  filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))",
+  letterSpacing: "0.08em",
+};
+
 type TierTheme = {
   bg: string;
   text: string;
@@ -269,19 +282,19 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         {/* Content */}
         <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
           {/* Top: logo + tier name */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center md:h-14 md:w-14">
+          <div className="flex items-center gap-4 md:gap-5">
+            <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
               <img
                 src={trisonLogo.url}
                 alt="Trí Sơn"
-                className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+                className="h-full w-full object-contain drop-shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
               />
             </div>
             <div className="leading-tight">
               <div className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
                 Yến Sào
               </div>
-              <div className="text-base font-light tracking-[0.2em] md:text-lg" style={{ fontFamily: "'Times New Roman', serif" }}>
+              <div className="text-xl font-bold tracking-[0.15em] md:text-2xl" style={GOLD_METALLIC}>
                 TRÍ SƠN {tier.enName}
               </div>
             </div>
@@ -292,21 +305,16 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             <div
               className="font-bold leading-none"
               style={{
-                fontFamily: "'Times New Roman', serif",
+                ...GOLD_METALLIC,
                 fontSize: "clamp(3rem, 13vw, 5.5rem)",
-                color: theme.pointsColor,
-                textShadow:
-                  tier.key === "diamond"
-                    ? "0 1px 0 rgba(255,255,255,0.25)"
-                    : "0 1px 0 rgba(255,255,255,0.35)",
                 letterSpacing: "0.02em",
               }}
             >
               {customer.points}
             </div>
             <div
-              className="mt-1 text-xs font-semibold tracking-[0.4em] md:text-sm"
-              style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
+              className="mt-1 text-xs font-bold tracking-[0.4em] md:text-sm"
+              style={{ ...GOLD_METALLIC, letterSpacing: "0.4em" }}
             >
               ĐIỂM
             </div>
@@ -332,8 +340,8 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
               </div>
             )}
             <div
-              className="mt-1 truncate text-lg font-semibold uppercase tracking-[0.15em] md:text-2xl"
-              style={{ fontFamily: "'Times New Roman', serif", color: theme.text }}
+              className="mt-1 truncate text-lg font-bold uppercase tracking-[0.15em] md:text-2xl"
+              style={GOLD_METALLIC}
             >
               {customer.name}
             </div>
