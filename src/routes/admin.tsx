@@ -31,7 +31,11 @@ import {
   X,
   Crown,
   Save,
+  Undo2,
+  ShieldAlert,
 } from "lucide-react";
+
+const MANAGER_PASSWORD = "TrisonAdmin2026";
 import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
