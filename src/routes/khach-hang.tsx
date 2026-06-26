@@ -13,6 +13,7 @@ import { QrScannerModal } from "@/components/qr-scanner";
 
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
+import lotusCardImg from "@/assets/lotus-card.png.asset.json";
 import { QRCodeSVG } from "qrcode.react";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 
