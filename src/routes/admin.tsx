@@ -64,7 +64,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number; created_at: string; birth_date: string | null };
+type Customer = { id: string; name: string; phone: string; points: number; created_at: string; birth_date: string | null; birth_day: number | null; birth_month: number | null };
 type Transaction = {
   id: string;
   customer_id: string;
@@ -682,7 +682,8 @@ function CustomersSection({ staff }: { staff: string }) {
   const [q, setQ] = useState("");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newBirth, setNewBirth] = useState("");
+  const [newBirthDay, setNewBirthDay] = useState("");
+  const [newBirthMonth, setNewBirthMonth] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
   const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
@@ -715,15 +716,26 @@ function CustomersSection({ staff }: { staff: string }) {
     e.preventDefault();
     const phone = normalizePhone(newPhone);
     if (!newName.trim() || phone.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
+    const d = parseBirthPart(newBirthDay, 31);
+    const m = parseBirthPart(newBirthMonth, 12);
+    if ((newBirthDay && d === null) || (newBirthMonth && m === null)) {
+      toast.error("Ngày sinh phải từ 1–31 và Tháng sinh từ 1–12");
+      return;
+    }
+    if ((d && !m) || (!d && m)) {
+      toast.error("Vui lòng nhập đủ cả Ngày và Tháng sinh");
+      return;
+    }
     const { error } = await supabase.from("customers").insert({
       name: newName.trim(),
       phone,
       points: 0,
-      birth_date: newBirth || null,
+      birth_day: d,
+      birth_month: m,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Đã thêm khách hàng");
-    setNewName(""); setNewPhone(""); setNewBirth(""); load();
+    setNewName(""); setNewPhone(""); setNewBirthDay(""); setNewBirthMonth(""); load();
   }
 
 
@@ -769,7 +781,7 @@ function CustomersSection({ staff }: { staff: string }) {
       return {
         "Họ và Tên Khách Hàng": c.name,
         "Số Điện Thoại": c.phone,
-        "Ngày Tháng Năm Sinh": c.birth_date ? formatBirth(c.birth_date) : "",
+        "Ngày / Tháng Sinh": formatBirth(c),
         "Số Điểm Tích Lũy": c.points,
         "Hạng Thành Viên": tier.name,
         "Member Since (Bắt đầu tích điểm)": w.activated ? w.memberSince : "Chưa kích hoạt",
@@ -813,9 +825,27 @@ function CustomersSection({ staff }: { staff: string }) {
             <Label className="text-xs font-bold text-muted-foreground">Số điện thoại</Label>
             <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="09xxxxxxxx" className="mt-1 h-12 rounded-xl border-2" />
           </div>
-          <div>
-            <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
-            <Input type="date" value={newBirth} onChange={(e) => setNewBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+          <div className="md:col-span-2">
+            <Label className="text-xs font-bold text-muted-foreground">🎂 Sinh nhật (chỉ cần Ngày &amp; Tháng)</Label>
+            <div className="mt-1 grid grid-cols-2 gap-3">
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={newBirthDay}
+                onChange={(e) => setNewBirthDay(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Ngày (1–31)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={newBirthMonth}
+                onChange={(e) => setNewBirthMonth(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Tháng (1–12)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Không bắt buộc nhập năm sinh.</div>
           </div>
           <div className="flex items-end">
             <Button type="submit" className="h-12 w-full rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm khách hàng</Button>
@@ -861,9 +891,9 @@ function CustomersSection({ staff }: { staff: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="font-bold">{c.name}</div>
                     <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
-                    {c.birth_date && (
+                    {customerBirth(c) && (
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        🎂 {formatBirth(c.birth_date)}
+                        🎂 {formatBirth(c)}
                       </div>
                     )}
                     {(() => {
@@ -1222,11 +1252,28 @@ const VN_MONTHS = [
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
 
-function formatBirth(iso: string): string {
-  // iso = "YYYY-MM-DD"
-  const [y, m, d] = iso.split("-");
-  if (!y || !m || !d) return iso;
-  return `${d}/${m}/${y}`;
+function parseBirthPart(s: string, max: number): number | null {
+  const t = s.trim();
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 1 || n > max) return null;
+  return Math.floor(n);
+}
+
+function customerBirth(c: { birth_day: number | null; birth_month: number | null; birth_date: string | null }): { day: number; month: number } | null {
+  if (c.birth_day && c.birth_month) return { day: c.birth_day, month: c.birth_month };
+  if (c.birth_date) {
+    const [, m, d] = c.birth_date.split("-");
+    const dd = Number(d), mm = Number(m);
+    if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) return { day: dd, month: mm };
+  }
+  return null;
+}
+
+function formatBirth(c: { birth_day: number | null; birth_month: number | null; birth_date: string | null }): string {
+  const b = customerBirth(c);
+  if (!b) return "";
+  return `${String(b.day).padStart(2, "0")}/${String(b.month).padStart(2, "0")}`;
 }
 
 function BirthdaysThisMonth() {
@@ -1238,22 +1285,13 @@ function BirthdaysThisMonth() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data } = await supabase
-        .from("customers")
-        .select("*")
-        .not("birth_date", "is", null);
+      const { data } = await supabase.from("customers").select("*");
       if (!mounted) return;
       const list = ((data as Customer[]) ?? [])
-        .filter((c) => {
-          if (!c.birth_date) return false;
-          const month = Number(c.birth_date.split("-")[1]);
-          return month === currentMonth;
-        })
-        .sort((a, b) => {
-          const da = Number(a.birth_date!.split("-")[2]);
-          const db = Number(b.birth_date!.split("-")[2]);
-          return da - db;
-        });
+        .map((c) => ({ c, b: customerBirth(c) }))
+        .filter(({ b }) => b !== null && b.month === currentMonth)
+        .sort((a, b) => (a.b!.day - b.b!.day))
+        .map(({ c }) => c);
       setItems(list);
       setLoading(false);
     })();
@@ -1303,7 +1341,7 @@ function BirthdaysThisMonth() {
                   <div className="truncate font-black text-brand-navy">{c.name}</div>
                   <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
                   <div className="mt-1 text-xs font-bold text-brand-red">
-                    🎂 Sinh ngày {formatBirth(c.birth_date!)}
+                    🎂 Sinh ngày {formatBirth(c)}
                   </div>
                 </div>
               </div>
@@ -1493,7 +1531,9 @@ function EditCustomerModal({
 }) {
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone);
-  const [birth, setBirth] = useState(customer.birth_date ?? "");
+  const initBirth = customerBirth(customer);
+  const [birthDay, setBirthDay] = useState(initBirth ? String(initBirth.day) : "");
+  const [birthMonth, setBirthMonth] = useState(initBirth ? String(initBirth.month) : "");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1531,6 +1571,14 @@ function EditCustomerModal({
     e.preventDefault();
     const p = normalizePhone(phone);
     if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
+    const bDay = parseBirthPart(birthDay, 31);
+    const bMonth = parseBirthPart(birthMonth, 12);
+    if ((birthDay && bDay === null) || (birthMonth && bMonth === null)) {
+      toast.error("Ngày sinh phải từ 1–31 và Tháng sinh từ 1–12"); return;
+    }
+    if ((bDay && !bMonth) || (!bDay && bMonth)) {
+      toast.error("Vui lòng nhập đủ cả Ngày và Tháng sinh"); return;
+    }
     setBusy(true);
 
     // Compute final points: start from current, apply add, then manager override (if unlocked & changed)
@@ -1544,11 +1592,14 @@ function EditCustomerModal({
       .update({
         name: name.trim(),
         phone: p,
-        birth_date: birth || null,
+        birth_day: bDay,
+        birth_month: bMonth,
+        birth_date: null,
         points: finalPoints,
       })
       .eq("id", customer.id);
     if (error) { setBusy(false); toast.error(error.message); return; }
+
 
     if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
@@ -1648,8 +1699,26 @@ function EditCustomerModal({
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
           </div>
           <div>
-            <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
-            <Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+            <Label className="text-xs font-bold text-muted-foreground">🎂 Sinh nhật (Ngày &amp; Tháng)</Label>
+            <div className="mt-1 grid grid-cols-2 gap-3">
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={birthDay}
+                onChange={(e) => setBirthDay(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Ngày (1–31)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+              <Input
+                inputMode="numeric"
+                maxLength={2}
+                value={birthMonth}
+                onChange={(e) => setBirthMonth(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                placeholder="Tháng (1–12)"
+                className="h-12 rounded-xl border-2 text-base"
+              />
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Không bắt buộc nhập năm sinh.</div>
           </div>
 
           <div className="rounded-xl border-2 border-brand-red/30 bg-brand-red/5 p-3">
