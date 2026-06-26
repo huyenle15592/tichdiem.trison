@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Search, Gift, Phone, QrCode } from "lucide-react";
+import { useRef, useState } from "react";
+import { Search, Gift, Phone, QrCode, Download, ScrollText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
