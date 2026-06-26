@@ -269,35 +269,65 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       <div className="md:hidden">
-        <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground">
+        <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground shadow-md">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-sidebar-foreground hover:bg-sidebar-accent">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground">
+              <div className="border-b border-sidebar-border px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-12 w-12 object-contain" />
+                  <div>
+                    <div className="text-sm font-black leading-tight">YẾN SÀO</div>
+                    <div className="text-xs font-bold leading-tight text-sidebar-foreground/70">TRÍ SƠN</div>
+                  </div>
+                </div>
+              </div>
+              <nav className="space-y-1 px-3 py-4">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = section === item.id;
+                  return (
+                    <SheetTrigger asChild key={item.id}>
+                      <button
+                        onClick={() => setSection(item.id)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition ${
+                          active ? "bg-brand-red text-brand-red-foreground" : "text-sidebar-foreground/80 hover:bg-sidebar-accent"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </button>
+                    </SheetTrigger>
+                  );
+                })}
+              </nav>
+              <div className="border-t border-sidebar-border p-3">
+                <Label className="text-xs text-sidebar-foreground/60">Thu ngân</Label>
+                <Input
+                  value={staff}
+                  onChange={(e) => { setStaff(e.target.value); localStorage.setItem("trison_staff", e.target.value); }}
+                  className="mt-1 h-10 rounded-lg border-sidebar-border bg-sidebar-accent text-sidebar-foreground"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
           <div className="flex items-center gap-2">
-            <img
-              src={trisonLogo.url}
-              alt="Yến sào Trí Sơn"
-              className="h-9 w-9 object-contain"
-            />
-            <span className="text-sm font-black">TRÍ SƠN ADMIN</span>
+            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-8 w-8 object-contain" />
+            <span className="text-sm font-black">
+              {navItems.find((n) => n.id === section)?.label ?? "TRÍ SƠN"}
+            </span>
           </div>
-          <Button onClick={onLogout} variant="ghost" size="sm" className="text-sidebar-foreground">
-            <LogOut className="h-4 w-4" />
+          <Button onClick={onLogout} variant="ghost" size="sm" className="h-10 w-10 p-0 text-sidebar-foreground hover:bg-sidebar-accent">
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
       <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
-        <div className="flex gap-2 overflow-x-auto px-4 py-3 md:hidden">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold ${
-                section === item.id ? "bg-brand-navy text-white" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
 
         <div className="mx-auto max-w-5xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
