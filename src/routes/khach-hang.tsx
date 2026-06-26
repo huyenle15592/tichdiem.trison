@@ -29,6 +29,8 @@ export const Route = createFileRoute("/khach-hang")({
 
 type Customer = { id: string; name: string; phone: string; points: number; created_at: string; activated_at: string | null };
 type Reward = { id: string; name: string; code: string | null; description: string | null; points_required: number; image_url: string | null };
+type RecentTx = { id: string; created_at: string; points_change: number; type: string; reason: string | null };
+
 
 function CustomerView() {
   const [query, setQuery] = useState("");
