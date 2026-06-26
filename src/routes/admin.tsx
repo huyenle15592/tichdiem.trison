@@ -2125,6 +2125,9 @@ function TierSettingsSection() {
   const [diamondMin, setDiamondMin] = useState<string>(String(DEFAULT_THRESHOLDS.diamondMin));
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [adminPw, setAdminPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -2143,10 +2146,16 @@ function TierSettingsSection() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    setPwError(null);
     const g = Number(goldMin);
     const d = Number(diamondMin);
     if (!Number.isFinite(g) || g < 1) { toast.error("Mốc Vàng phải là số dương"); return; }
     if (!Number.isFinite(d) || d <= g) { toast.error("Mốc Kim Cương phải lớn hơn mốc Vàng"); return; }
+    if (adminPw !== MANAGER_PASSWORD) {
+      setPwError("Mật khẩu Quản lý không chính xác. Bạn không có quyền thay đổi luật tích điểm!");
+      toast.error("Sai mật khẩu Quản lý");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase
       .from("tier_settings")
@@ -2154,6 +2163,8 @@ function TierSettingsSection() {
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Đã cập nhật luật chơi! Khách hàng sẽ thấy ngay theo thời gian thực.");
+    setAdminPw("");
+    setShowPw(false);
   }
 
   function resetDefaults() {
@@ -2237,6 +2248,41 @@ function TierSettingsSection() {
           <p className="mt-1 text-sm font-semibold text-white/90">
             Áp dụng: <span className="text-amber-300">từ {d} điểm trở lên</span>
           </p>
+        </div>
+
+        {/* Admin password gate */}
+        <div className="rounded-2xl border-2 border-brand-red/40 bg-brand-red/5 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-brand-red" />
+            <Label className="text-sm font-black uppercase tracking-wide text-brand-red">
+              Mật khẩu xác thực Quản lý (Admin Password)
+            </Label>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Chỉ Quản lý cấp cao mới được phép thay đổi luật tích điểm. Vui lòng nhập mật khẩu Admin để xác nhận.
+          </p>
+          <div className="relative">
+            <Input
+              type={showPw ? "text" : "password"}
+              value={adminPw}
+              onChange={(e) => { setAdminPw(e.target.value); setPwError(null); }}
+              placeholder="Nhập mật khẩu Quản lý..."
+              autoComplete="off"
+              className="h-12 rounded-xl border-2 pr-12 text-base font-bold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+              aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            >
+              {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {pwError && (
+            <p className="mt-2 text-sm font-black text-brand-red">{pwError}</p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
