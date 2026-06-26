@@ -389,7 +389,9 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
-  const tier = getTier(customer.points);
+  const thresholds = useTierThresholds();
+  const tier = getTier(customer.points, thresholds);
+
   const points = useMemo(() => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000), [amount]);
   const win = cardWindow(activatedAt);
 
