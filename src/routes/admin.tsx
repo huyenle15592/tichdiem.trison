@@ -675,10 +675,12 @@ function CustomersSection({ staff }: { staff: string }) {
       {editing && (
         <EditCustomerModal
           customer={editing}
+          staff={staff}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+
       {quickAdd && (
         <QuickAddPointsModal
           customer={quickAdd}
