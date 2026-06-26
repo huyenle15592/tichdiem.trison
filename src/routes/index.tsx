@@ -32,7 +32,7 @@ function PortalView() {
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
-          Hệ thống Tích điểm Thành viên — Tri ân khách hàng{"\u00a0"}
+          Hệ thống Tích điểm Thành viên — Tri ân khách hàng & quản trị nội bộ.
         </p>
       </header>
 
