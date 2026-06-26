@@ -129,7 +129,6 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
             className="mx-auto h-16 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
             style={{ mixBlendMode: "multiply" }}
           />
-        </div>
           <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>
