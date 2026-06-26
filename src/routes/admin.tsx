@@ -480,8 +480,9 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
   );
 }
 
-function TransactionList({ items }: { items: Transaction[] }) {
+function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[]; allowVoid?: boolean; onVoided?: () => void }) {
   const [names, setNames] = useState<Record<string, { name: string; phone: string }>>({});
+  const [voiding, setVoiding] = useState<string | null>(null);
 
   useEffect(() => {
     const ids = Array.from(new Set(items.map((i) => i.customer_id))).filter((id) => !names[id]);
@@ -495,6 +496,26 @@ function TransactionList({ items }: { items: Transaction[] }) {
     });
   }, [items]);
 
+  async function voidTx(t: Transaction) {
+    if (!confirm("Bạn có chắc chắn muốn hủy giao dịch nhập sai này không?\nĐiểm của khách sẽ được hoàn trả về trạng thái cũ.")) return;
+    setVoiding(t.id);
+    // Refresh customer to get latest points
+    const { data: cust } = await supabase.from("customers").select("points").eq("id", t.customer_id).maybeSingle();
+    if (!cust) { toast.error("Không tìm thấy khách"); setVoiding(null); return; }
+    const reverted = (cust as any).points - t.points_change;
+    if (reverted < 0) { toast.error("Không thể hoàn: điểm khách đã không còn đủ"); setVoiding(null); return; }
+    const { error: e1 } = await supabase.from("customers").update({ points: reverted }).eq("id", t.customer_id);
+    if (e1) { toast.error(e1.message); setVoiding(null); return; }
+    const { error: e2 } = await supabase
+      .from("transactions")
+      .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || "") })
+      .eq("id", t.id);
+    if (e2) { toast.error(e2.message); setVoiding(null); return; }
+    toast.success(`Đã hoàn ${Math.abs(t.points_change)} điểm`);
+    setVoiding(null);
+    onVoided?.();
+  }
+
   if (items.length === 0)
     return <div className="rounded-2xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">Chưa có giao dịch nào.</div>;
 
@@ -506,23 +527,45 @@ function TransactionList({ items }: { items: Transaction[] }) {
           const time = new Date(t.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
           const masked = c ? `${c.phone.slice(0, 4)}xxxxxx` : "...";
           const positive = t.points_change > 0;
+          const voided = t.type === "void";
+          const canVoid = allowVoid && !voided && t.type !== "adjust";
           return (
-            <li key={t.id} className="flex items-center justify-between gap-3 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full font-mono text-xs font-bold text-muted-foreground" style={{ background: "var(--muted)" }}>
+            <li key={t.id} className={`flex items-center justify-between gap-3 p-4 ${voided ? "bg-muted/40" : ""}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold text-muted-foreground" style={{ background: "var(--muted)" }}>
                   {time}
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-foreground">
+                <div className="min-w-0">
+                  <div className={`text-sm font-bold ${voided ? "text-muted-foreground line-through" : "text-foreground"}`}>
                     {c?.name ?? "Khách"} <span className="font-mono text-xs text-muted-foreground">({masked})</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground truncate">
                     {t.reason || "—"} • Bởi {t.staff_name || "?"}
                   </div>
+                  {voided && (
+                    <div className="mt-0.5 inline-block rounded-full bg-brand-red/10 px-2 py-0.5 text-[10px] font-black uppercase text-brand-red">
+                      Đã hủy do nhập sai
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className={`text-lg font-black ${positive ? "text-success" : "text-brand-red"}`}>
-                {positive ? "+" : ""}{t.points_change}
+              <div className="flex items-center gap-2">
+                <div className={`text-lg font-black ${voided ? "text-muted-foreground line-through" : positive ? "text-success" : "text-brand-red"}`}>
+                  {positive ? "+" : ""}{t.points_change}
+                </div>
+                {canVoid && (
+                  <Button
+                    onClick={() => voidTx(t)}
+                    disabled={voiding === t.id}
+                    size="sm"
+                    variant="ghost"
+                    title="Hủy lệnh / Hoàn điểm"
+                    className="h-9 rounded-lg border border-brand-red/30 px-2 text-xs font-black text-brand-red hover:bg-brand-red hover:text-brand-red-foreground"
+                  >
+                    <Undo2 className="mr-1 h-3.5 w-3.5" />
+                    {voiding === t.id ? "..." : "Hủy"}
+                  </Button>
+                )}
               </div>
             </li>
           );
