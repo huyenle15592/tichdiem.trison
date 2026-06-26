@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
+import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
