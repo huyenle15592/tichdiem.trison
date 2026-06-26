@@ -187,9 +187,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-red">
-              <Sparkles className="h-5 w-5 text-brand-red-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white p-1 shadow-[var(--shadow-soft)]">
+              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
             </div>
             <div>
               <div className="text-sm font-black leading-tight">YẾN SÀO</div>
