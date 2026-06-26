@@ -901,72 +901,91 @@ function CustomersSection({ staff }: { staff: string }) {
             {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
           </ul>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-[Montserrat]">
-              <thead className="bg-brand-navy/5 text-xs font-black uppercase tracking-wider text-brand-navy">
-                <tr>
-                  <th className="px-4 py-3">Họ và Tên</th>
-                  <th className="px-4 py-3">Số điện thoại</th>
-                  <th className="px-4 py-3">Hạng hiện tại</th>
-                  <th className="px-4 py-3">Ngày mua cuối</th>
-                  <th className="px-4 py-3">Số ngày bỏ quên</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y text-sm">
-                {inactiveList.map(({ c, last, days }) => {
-                  const tier = getTier(c.points, thresholds);
-                  return (
-                    <tr key={c.id} className="hover:bg-brand-navy/5">
-                      <td className="px-4 py-3 font-bold text-foreground">{c.name}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono">{c.phone}</span>
-                          <Button
-                            onClick={() => copyPhone(c.phone)}
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10"
-                            title="Copy SĐT để gửi Zalo"
-                          >
+          <>
+            {/* Mobile card list */}
+            <ul className="divide-y md:hidden">
+              {inactiveList.map(({ c, last, days }) => {
+                const tier = getTier(c.points, thresholds);
+                return (
+                  <li key={c.id} className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-black text-brand-navy">{c.name}</div>
+                        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
+                          {c.phone}
+                          <Button onClick={() => copyPhone(c.phone)} size="sm" variant="ghost" className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10">
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>
-                          {tier.name}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-semibold">{formatDate(last)}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full bg-brand-red/10 px-2.5 py-1 text-xs font-black text-brand-red">
-                          {days} ngày chưa mua
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          onClick={() => setQuickAdd(c)}
-                          size="sm"
-                          className="h-9 rounded-lg bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90"
-                        >
-                          <Plus className="mr-1 h-3.5 w-3.5" /> Cộng điểm
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {inactiveList.length === 0 && (
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-semibold text-muted-foreground">Mua cuối: <span className="text-foreground">{formatDate(last)}</span></span>
+                      <span className="rounded-full bg-brand-red/10 px-2.5 py-1 font-black text-brand-red">{days} ngày chưa mua</span>
+                    </div>
+                    <Button onClick={() => setQuickAdd(c)} className="h-11 w-full rounded-xl bg-brand-red text-sm font-black text-brand-red-foreground hover:bg-brand-red/90">
+                      <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                    </Button>
+                  </li>
+                );
+              })}
+              {inactiveList.length === 0 && (
+                <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào quá hạn theo bộ lọc này. 🎉</li>
+              )}
+            </ul>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left font-[Montserrat]">
+                <thead className="bg-brand-navy/5 text-xs font-black uppercase tracking-wider text-brand-navy">
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
-                      Không có khách hàng nào quá hạn theo bộ lọc này. 🎉
-                    </td>
+                    <th className="px-4 py-3">Họ và Tên</th>
+                    <th className="px-4 py-3">Số điện thoại</th>
+                    <th className="px-4 py-3">Hạng hiện tại</th>
+                    <th className="px-4 py-3">Ngày mua cuối</th>
+                    <th className="px-4 py-3">Số ngày bỏ quên</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y text-sm">
+                  {inactiveList.map(({ c, last, days }) => {
+                    const tier = getTier(c.points, thresholds);
+                    return (
+                      <tr key={c.id} className="hover:bg-brand-navy/5">
+                        <td className="px-4 py-3 font-bold text-foreground">{c.name}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{c.phone}</span>
+                            <Button onClick={() => copyPhone(c.phone)} size="sm" variant="ghost" className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10" title="Copy SĐT để gửi Zalo">
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                        </td>
+                        <td className="px-4 py-3 font-semibold">{formatDate(last)}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-brand-red/10 px-2.5 py-1 text-xs font-black text-brand-red">{days} ngày chưa mua</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button onClick={() => setQuickAdd(c)} size="sm" className="h-9 rounded-lg bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90">
+                            <Plus className="mr-1 h-3.5 w-3.5" /> Cộng điểm
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {inactiveList.length === 0 && (
+                    <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào quá hạn theo bộ lọc này. 🎉</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
+
 
       </div>
 
