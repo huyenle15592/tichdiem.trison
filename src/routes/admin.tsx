@@ -1571,6 +1571,14 @@ function EditCustomerModal({
     e.preventDefault();
     const p = normalizePhone(phone);
     if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
+    const bDay = parseBirthPart(birthDay, 31);
+    const bMonth = parseBirthPart(birthMonth, 12);
+    if ((birthDay && bDay === null) || (birthMonth && bMonth === null)) {
+      toast.error("Ngày sinh phải từ 1–31 và Tháng sinh từ 1–12"); return;
+    }
+    if ((bDay && !bMonth) || (!bDay && bMonth)) {
+      toast.error("Vui lòng nhập đủ cả Ngày và Tháng sinh"); return;
+    }
     setBusy(true);
 
     // Compute final points: start from current, apply add, then manager override (if unlocked & changed)
@@ -1584,11 +1592,14 @@ function EditCustomerModal({
       .update({
         name: name.trim(),
         phone: p,
-        birth_date: birth || null,
+        birth_day: bDay,
+        birth_month: bMonth,
+        birth_date: null,
         points: finalPoints,
       })
       .eq("id", customer.id);
     if (error) { setBusy(false); toast.error(error.message); return; }
+
 
     if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
