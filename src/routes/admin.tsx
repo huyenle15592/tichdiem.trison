@@ -44,10 +44,12 @@ import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, typ
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import { autoExpireCustomer, fetchExpiringSoon, renewMembershipIfActive, type ExpiringSoon } from "@/lib/expiry";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Settings2 } from "lucide-react";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
+import { Switch } from "@/components/ui/switch";
+import { sendZaloNotification, loadZnsSettings, saveZnsSettings, DEFAULT_ZNS_SETTINGS, type ZnsSettings } from "@/lib/zalo-zns";
 import { Camera } from "lucide-react";
 
 
