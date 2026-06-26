@@ -2163,22 +2163,41 @@ function QuickAddPointsModal({
             <Input
               value={redeemCode}
               onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); redeem(e); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && codeStatus === "valid") { e.preventDefault(); redeem(e); } }}
               placeholder="VD: TS-YEN-NHUY-HOA-70ML"
-              className="h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider"
+              className={`h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider ${
+                codeStatus === "invalid" ? "border-red-500 bg-red-50" :
+                codeStatus === "valid" ? "border-success bg-success/5" : ""
+              }`}
             />
             <Button
               type="button"
               onClick={redeem}
-              disabled={redeemBusy || !redeemCode.trim()}
-              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110"
+              disabled={redeemBusy || codeStatus !== "valid"}
+              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white disabled:opacity-100"
             >
               {redeemBusy ? "Đang xử lý..." : "XÁC NHẬN ĐỔI QUÀ"}
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
-          </p>
+          {codeStatus === "invalid" && (
+            <p className="mt-2 text-sm font-bold text-red-600">
+              ⛔ Mã sản phẩm không hợp lệ, vui lòng kiểm tra lại!
+            </p>
+          )}
+          {codeStatus === "valid" && matchedReward && (
+            <p className="mt-2 text-sm font-bold text-success">
+              ✓ {matchedReward.name} — Trừ {matchedReward.points_required} điểm
+            </p>
+          )}
+          {codeStatus === "checking" && (
+            <p className="mt-2 text-xs italic text-muted-foreground">Đang kiểm tra mã...</p>
+          )}
+          {codeStatus === "idle" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
+            </p>
+          )}
+
         </div>
       </form>
     </div>
