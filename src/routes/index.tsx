@@ -21,14 +21,14 @@ function PortalView() {
   return (
     <div className="relative min-h-screen bg-transparent">
       <LotusScene />
-      <header className="relative mx-auto max-w-6xl px-5 pt-12 pb-2 text-center md:pt-20">
+      <header className="relative mx-auto max-w-6xl px-5 pt-10 pb-2 text-center md:pt-14">
         <img
           src={trisonLogo.url}
           alt="Yến sào Trí Sơn"
-          className="mx-auto h-20 w-auto md:h-28"
+          className="mx-auto h-40 w-auto md:h-56"
           style={{ mixBlendMode: "multiply" }}
         />
-        <h1 className="mt-9 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-12 md:text-6xl">
+        <h1 className="mt-12 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-16 md:text-6xl">
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
