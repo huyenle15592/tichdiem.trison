@@ -950,6 +950,15 @@ function EditCustomerModal({
           </button>
         </div>
 
+        <div className="mb-3 rounded-xl border bg-muted/40 p-3 text-xs">
+          <div className="font-bold text-brand-navy">Hạn sử dụng thẻ</div>
+          <div className="mt-1 flex flex-wrap gap-x-4 text-muted-foreground">
+            <span>Member Since: <span className="font-semibold text-foreground">{formatVnDate(customer.created_at)}</span></span>
+            <span>Valid Through: <span className="font-semibold text-brand-red">{formatVnDate(addOneYearIso(customer.created_at))}</span></span>
+          </div>
+        </div>
+
+
         <div className="space-y-3">
           <div>
             <Label className="text-xs font-bold text-muted-foreground">Họ và tên</Label>
