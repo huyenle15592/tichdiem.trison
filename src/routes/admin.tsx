@@ -33,6 +33,7 @@ import {
   Save,
   Undo2,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 
 const MANAGER_PASSWORD = "TrisonAdmin2026";
