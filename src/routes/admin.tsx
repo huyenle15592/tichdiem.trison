@@ -564,26 +564,8 @@ function CustomersSection({ staff }: { staff: string }) {
     setNewName(""); setNewPhone(""); setNewBirth(""); load();
   }
 
-  async function onExcel(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    const rows = text.split(/\r?\n/).map((r) => r.split(",").map((c) => c.trim())).filter((r) => r.length >= 2 && r[0] && r[1]);
-    const recs = rows
-      .map(([name, phone, points, birth]) => ({
-        name,
-        phone: normalizePhone(phone),
-        points: Number(points) || 0,
-        birth_date: birth && /^\d{4}-\d{2}-\d{2}$/.test(birth) ? birth : null,
-      }))
-      .filter((r) => r.phone.length >= 8);
-    if (recs.length === 0) { toast.error("File trống hoặc sai định dạng (cần: tên,SĐT,điểm,ngày sinh)"); return; }
-    const { error } = await supabase.from("customers").upsert(recs, { onConflict: "phone" });
-    if (error) toast.error(error.message);
-    else toast.success(`Đã nhập ${recs.length} khách hàng`);
-    load();
-    e.target.value = "";
-  }
+
+
 
   const filtered = items.filter((c) => c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()));
 
