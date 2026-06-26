@@ -520,7 +520,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                     <button
                       type="button"
                       onClick={() => setRedeemReward(r)}
-                      className="mt-3 w-full rounded-xl bg-success px-3 py-2.5 text-center text-sm font-black uppercase tracking-wide text-success-foreground shadow-md transition hover:brightness-110 active:scale-[0.98]"
+                      className="mt-3 min-h-12 w-full rounded-xl bg-success px-3 py-3 text-center text-sm font-black uppercase tracking-wide text-success-foreground shadow-md transition hover:brightness-110 active:scale-[0.98]"
                     >
                       ✓ Đủ điểm — Đổi quà
                     </button>
