@@ -571,6 +571,79 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
           </li>
         </ul>
       </div>
+
+      {redeemReward && (
+        <RedeemCodeModal reward={redeemReward} onClose={() => setRedeemReward(null)} />
+      )}
+    </div>
+  );
+}
+
+function RedeemCodeModal({ reward, onClose }: { reward: Reward; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md overflow-hidden rounded-3xl bg-card shadow-2xl"
+        style={{ boxShadow: "0 25px 80px -10px rgba(0,0,0,0.5)" }}
+      >
+        <div
+          className="px-6 py-5 text-center text-white"
+          style={{ background: "linear-gradient(135deg, var(--brand-navy), oklch(0.25 0.08 250))" }}
+        >
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">
+            Yến sào Trí Sơn
+          </div>
+          <h3 className="mt-1 text-xl font-black uppercase tracking-wide">
+            Xác nhận đổi quà thành viên
+          </h3>
+        </div>
+
+        <div className="px-6 py-6 text-center">
+          <div className="text-sm font-semibold text-muted-foreground">{reward.name}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Trị giá: <span className="font-bold text-brand-red">{reward.points_required} điểm</span>
+          </div>
+
+          <div className="my-5 rounded-2xl border-2 border-dashed bg-gradient-to-br from-amber-50 to-yellow-50 px-4 py-5"
+            style={{ borderColor: "#bf953f" }}
+          >
+            <div className="text-[11px] font-bold uppercase tracking-wider text-brand-navy/70">
+              Mã sản phẩm / Mã đổi thưởng
+            </div>
+            <div
+              className="mt-2 break-all text-2xl leading-tight"
+              style={{
+                ...GOLD_METALLIC,
+                fontSize: "1.75rem",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {reward.code || "(Chưa có mã)"}
+            </div>
+          </div>
+
+          <p className="text-sm leading-relaxed text-foreground">
+            Vui lòng đưa màn hình mã này <span className="font-bold">hoặc đọc mã</span> cho{" "}
+            <span className="font-bold text-brand-red">Thu ngân tại quầy</span> để nhận quà chưng sẵn.
+          </p>
+          <p className="mt-2 text-xs italic text-muted-foreground">
+            Điểm sẽ được tự động trừ sau khi nhân viên xác nhận trên hệ thống.
+          </p>
+
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="outline"
+            className="mt-5 h-11 rounded-xl px-8 font-bold"
+          >
+            ĐÓNG
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
