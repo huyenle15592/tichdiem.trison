@@ -52,14 +52,15 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-soft: 0 4px 14px -4px oklch(0.2 0.08 260 / 0.18);
-  --shadow-card: 0 10px 30px -10px oklch(0.2 0.08 260 / 0.25);
+  --shadow-soft: 0 4px 14px -4px oklch(0.2 0.08 260 / 0.10);
+  --shadow-card: 0 18px 50px -18px oklch(0.2 0.08 260 / 0.18);
+  --shadow-float: 0 30px 80px -30px oklch(0.2 0.08 260 / 0.18), 0 8px 24px -12px oklch(0.2 0.08 260 / 0.10);
 }
 
 :root {
   --radius: 0.875rem;
 
-  --background: oklch(0.99 0.005 250);
+  --background: oklch(0.985 0.008 85); /* ivory / off-white */
   --foreground: oklch(0.2 0.04 260);
 
   --card: oklch(1 0 0);
