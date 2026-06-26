@@ -40,6 +40,8 @@ const MANAGER_PASSWORD = "TrisonAdmin2026";
 import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
+import { autoExpireCustomer, fetchExpiringSoon, type ExpiringSoon } from "@/lib/expiry";
+import { AlertTriangle } from "lucide-react";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
@@ -335,7 +337,13 @@ function Dashboard({ staff }: { staff: string }) {
 
   async function lookupByPhone(p: string): Promise<Customer | null> {
     const { data } = await supabase.from("customers").select("*").eq("phone", p).maybeSingle();
-    return (data as Customer) ?? null;
+    if (!data) return null;
+    const exp = await autoExpireCustomer({ id: (data as any).id, points: (data as any).points });
+    if (exp.expired) {
+      toast.message("Thẻ khách đã hết hạn 1 năm - đã tự reset về 0 điểm.");
+      return { ...(data as Customer), points: 0 };
+    }
+    return data as Customer;
   }
 
   async function findCustomer(e?: React.FormEvent) {
@@ -377,6 +385,9 @@ function Dashboard({ staff }: { staff: string }) {
       </div>
 
       <BirthdaysThisMonth />
+      <ExpiringCardsSoon />
+
+
 
 
       <form onSubmit={findCustomer} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
