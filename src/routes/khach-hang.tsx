@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Search, Gift, Phone, Download, ScrollText } from "lucide-react";
+import { Search, Gift, Phone, Download, ScrollText, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,7 +144,16 @@ function CustomerView() {
         style={{ background: "linear-gradient(135deg, var(--brand-red), oklch(0.45 0.2 25))" }}
       >
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-        <div className="relative mx-auto max-w-2xl px-5 py-8 text-center">
+
+        <Link
+          to="/"
+          className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:top-4 md:left-4 md:gap-2 md:px-4 md:text-base"
+        >
+          <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
+          Quay lại trang chủ
+        </Link>
+
+        <div className="relative mx-auto max-w-2xl px-5 pt-10 pb-8 text-center md:pt-12">
           <img
             src={trisonLogo.url}
             alt="Yến sào Trí Sơn"
