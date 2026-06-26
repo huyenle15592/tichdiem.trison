@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Crown, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
+import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
