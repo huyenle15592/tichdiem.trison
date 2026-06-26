@@ -929,6 +929,15 @@ function EditCustomerModal({
   const [birth, setBirth] = useState(customer.birth_date ?? "");
   const [points, setPoints] = useState(String(customer.points));
   const [busy, setBusy] = useState(false);
+  const [activatedAt, setActivatedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchActivationDate(customer.id).then((d) => { if (alive) setActivatedAt(d); });
+    return () => { alive = false; };
+  }, [customer.id]);
+
+  const win = cardWindow(activatedAt);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
