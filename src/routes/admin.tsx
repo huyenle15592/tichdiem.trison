@@ -716,15 +716,26 @@ function CustomersSection({ staff }: { staff: string }) {
     e.preventDefault();
     const phone = normalizePhone(newPhone);
     if (!newName.trim() || phone.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
+    const d = parseBirthPart(newBirthDay, 31);
+    const m = parseBirthPart(newBirthMonth, 12);
+    if ((newBirthDay && d === null) || (newBirthMonth && m === null)) {
+      toast.error("Ngày sinh phải từ 1–31 và Tháng sinh từ 1–12");
+      return;
+    }
+    if ((d && !m) || (!d && m)) {
+      toast.error("Vui lòng nhập đủ cả Ngày và Tháng sinh");
+      return;
+    }
     const { error } = await supabase.from("customers").insert({
       name: newName.trim(),
       phone,
       points: 0,
-      birth_date: newBirth || null,
+      birth_day: d,
+      birth_month: m,
     });
     if (error) { toast.error(error.message); return; }
     toast.success("Đã thêm khách hàng");
-    setNewName(""); setNewPhone(""); setNewBirth(""); load();
+    setNewName(""); setNewPhone(""); setNewBirthDay(""); setNewBirthMonth(""); load();
   }
 
 
