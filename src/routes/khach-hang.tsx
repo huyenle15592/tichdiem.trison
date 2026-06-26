@@ -328,7 +328,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         />
 
         {/* Content */}
-        <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
+        <div className="relative z-10 flex h-full flex-col justify-between p-5 md:p-6">
           {/* Top: logo + tier name */}
           <div className="flex items-center gap-4 md:gap-5">
             <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
