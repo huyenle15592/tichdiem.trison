@@ -1510,6 +1510,39 @@ function QuickAddPointsModal({
             {busy ? "Đang lưu..." : `Cộng +${points} điểm`}
           </Button>
         </div>
+
+        {/* ===== ĐỔI QUÀ BẰNG MÃ SẢN PHẨM ===== */}
+        <div className="mt-6 rounded-2xl border-2 border-dashed border-success/40 bg-success/5 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Gift className="h-5 w-5 text-success" />
+            <Label className="text-sm font-black uppercase tracking-wide text-success">
+              Đổi quà bằng mã sản phẩm
+            </Label>
+          </div>
+          <Label className="text-xs font-bold text-brand-navy">
+            Nhập Mã Sản Phẩm Để Đổi Quà
+          </Label>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={redeemCode}
+              onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); redeem(e); } }}
+              placeholder="VD: TS-YEN-NHUY-HOA-70ML"
+              className="h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider"
+            />
+            <Button
+              type="button"
+              onClick={redeem}
+              disabled={redeemBusy || !redeemCode.trim()}
+              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110"
+            >
+              {redeemBusy ? "Đang xử lý..." : "XÁC NHẬN ĐỔI QUÀ"}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
+          </p>
+        </div>
       </form>
     </div>
   );
