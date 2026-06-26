@@ -1970,10 +1970,36 @@ function QuickAddPointsModal({
   const [busy, setBusy] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeemBusy, setRedeemBusy] = useState(false);
+  const [codeStatus, setCodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [matchedReward, setMatchedReward] = useState<{ name: string; points_required: number } | null>(null);
   const points = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
   );
+
+  useEffect(() => {
+    const code = redeemCode.trim().toUpperCase();
+    if (!code) { setCodeStatus("idle"); setMatchedReward(null); return; }
+    setCodeStatus("checking");
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("rewards")
+        .select("name, points_required, active")
+        .ilike("code", code)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data && (data as any).active) {
+        setMatchedReward({ name: (data as any).name, points_required: (data as any).points_required });
+        setCodeStatus("valid");
+      } else {
+        setMatchedReward(null);
+        setCodeStatus("invalid");
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [redeemCode]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
