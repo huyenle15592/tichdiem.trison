@@ -891,9 +891,9 @@ function CustomersSection({ staff }: { staff: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="font-bold">{c.name}</div>
                     <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
-                    {c.birth_date && (
+                    {customerBirth(c) && (
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        🎂 {formatBirth(c.birth_date)}
+                        🎂 {formatBirth(c)}
                       </div>
                     )}
                     {(() => {
