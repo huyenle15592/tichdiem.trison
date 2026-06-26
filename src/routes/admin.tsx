@@ -40,7 +40,7 @@ const MANAGER_PASSWORD = "TrisonAdmin2026";
 import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
-import { autoExpireCustomer, fetchExpiringSoon, type ExpiringSoon } from "@/lib/expiry";
+import { autoExpireCustomer, fetchExpiringSoon, renewMembershipIfActive, type ExpiringSoon } from "@/lib/expiry";
 import { AlertTriangle } from "lucide-react";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
@@ -474,6 +474,7 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
     setBusy(true);
     const change = type === "add" ? pts : -pts;
     const newPoints = customer.points + change;
+    if (type === "add") await renewMembershipIfActive(customer.id);
     const { data: upd, error: e1 } = await supabase.from("customers").update({ points: newPoints }).eq("id", customer.id).select().single();
     if (e1) { toast.error("Lỗi: " + e1.message); setBusy(false); return; }
     const { error: e2 } = await supabase.from("transactions").insert({
@@ -1289,6 +1290,7 @@ function EditCustomerModal({
 
     if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
+      await renewMembershipIfActive(customer.id);
       const { error: e2 } = await supabase.from("transactions").insert({
         customer_id: customer.id,
         points_change: addPoints,
@@ -1518,6 +1520,7 @@ function QuickAddPointsModal({
     if (points <= 0) { toast.error("Hóa đơn phải tối thiểu 100.000đ"); return; }
     setBusy(true);
     const newPoints = customer.points + points;
+    await renewMembershipIfActive(customer.id);
     const { error: e1 } = await supabase.from("customers").update({ points: newPoints }).eq("id", customer.id);
     if (e1) { toast.error("Lỗi: " + e1.message); setBusy(false); return; }
     const { error: e2 } = await supabase.from("transactions").insert({

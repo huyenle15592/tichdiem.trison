@@ -38,6 +38,34 @@ export async function autoExpireCustomer(customer: {
   return { expired: true, activatedAt: null, points: 0 };
 }
 
+/**
+ * Auto-renew the 1-year membership window when a customer earns new points
+ * while their card is still valid. Inserts a "renew" cutoff marker timestamped
+ * 1 second before now so the next positive transaction (the new add) becomes
+ * the activation date → Valid Through = today + 1 year.
+ *
+ * Call this BEFORE inserting the new "add" transaction.
+ * No-op when the card is unactivated or already expired (autoExpireCustomer
+ * handles the reset path separately).
+ */
+export async function renewMembershipIfActive(customerId: string): Promise<boolean> {
+  const activatedAt = await fetchActivationDate(customerId);
+  if (!activatedAt) return false;
+  const expIso = addOneYearIso(activatedAt);
+  if (!expIso || new Date(expIso).getTime() <= Date.now()) return false;
+
+  const markerAt = new Date(Date.now() - 1000).toISOString();
+  await supabase.from("transactions").insert({
+    customer_id: customerId,
+    points_change: 0,
+    type: "renew",
+    reason: "Tự động gia hạn thẻ thành viên thêm 1 năm",
+    staff_name: "Hệ thống",
+    created_at: markerAt,
+  } as any);
+  return true;
+}
+
 export type ExpiringSoon = {
   id: string;
   name: string;

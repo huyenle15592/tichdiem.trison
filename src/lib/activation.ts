@@ -7,15 +7,16 @@ import { supabase } from "@/integrations/supabase/client";
  * fresh / un-activated cycle.
  */
 export async function fetchActivationDate(customerId: string): Promise<string | null> {
-  const { data: lastExpire } = await supabase
+  // Cutoff = most recent "expire" (reset) OR "renew" (auto-extend) marker.
+  const { data: lastCut } = await supabase
     .from("transactions")
     .select("created_at")
     .eq("customer_id", customerId)
-    .eq("type", "expire")
+    .in("type", ["expire", "renew"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const cutoff = (lastExpire?.created_at as string | undefined) ?? null;
+  const cutoff = (lastCut?.created_at as string | undefined) ?? null;
 
   let q = supabase
     .from("transactions")
@@ -46,14 +47,14 @@ export async function fetchActivationDates(
     .in("customer_id", customerIds)
     .order("created_at", { ascending: true });
 
-  const lastExpire: Record<string, string> = {};
+  const lastCut: Record<string, string> = {};
   (data ?? []).forEach((t: any) => {
-    if (t.type === "expire") lastExpire[t.customer_id] = t.created_at;
+    if (t.type === "expire" || t.type === "renew") lastCut[t.customer_id] = t.created_at;
   });
   (data ?? []).forEach((t: any) => {
     if (map[t.customer_id]) return;
     if (t.points_change <= 0) return;
-    const cutoff = lastExpire[t.customer_id];
+    const cutoff = lastCut[t.customer_id];
     if (cutoff && t.created_at <= cutoff) return;
     map[t.customer_id] = t.created_at;
   });
