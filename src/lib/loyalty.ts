@@ -68,7 +68,7 @@ export function cardWindow(activatedAt: string | null | undefined): CardWindow {
     return {
       activated: false,
       memberSince: "Chưa kích hoạt",
-      validThrough: "Kích hoạt sau lần tích điểm đầu tiên",
+      validThrough: "Kích hoạt chu kỳ mới sau lần tích điểm kế tiếp",
     };
   }
   return {

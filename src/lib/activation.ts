@@ -2,18 +2,30 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Activation date = the created_at of the customer's FIRST point-earning
- * transaction (points_change > 0). Returns null if the customer has never
- * earned points yet.
+ * transaction (points_change > 0) AFTER the most recent "expire" reset
+ * transaction (if any). Returns null when the customer is currently in a
+ * fresh / un-activated cycle.
  */
 export async function fetchActivationDate(customerId: string): Promise<string | null> {
-  const { data } = await supabase
+  const { data: lastExpire } = await supabase
+    .from("transactions")
+    .select("created_at")
+    .eq("customer_id", customerId)
+    .eq("type", "expire")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const cutoff = (lastExpire?.created_at as string | undefined) ?? null;
+
+  let q = supabase
     .from("transactions")
     .select("created_at")
     .eq("customer_id", customerId)
     .gt("points_change", 0)
     .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+  if (cutoff) q = q.gt("created_at", cutoff);
+  const { data } = await q.maybeSingle();
   return (data?.created_at as string | undefined) ?? null;
 }
 
@@ -25,14 +37,25 @@ export async function fetchActivationDates(
     map[id] = null;
   });
   if (customerIds.length === 0) return map;
+
+  // Pull every relevant transaction once (positive earns + expires) and
+  // resolve activation in JS so we honor reset cycles without N queries.
   const { data } = await supabase
     .from("transactions")
-    .select("customer_id, created_at")
+    .select("customer_id, created_at, points_change, type")
     .in("customer_id", customerIds)
-    .gt("points_change", 0)
     .order("created_at", { ascending: true });
-  (data ?? []).forEach((t: { customer_id: string; created_at: string }) => {
-    if (!map[t.customer_id]) map[t.customer_id] = t.created_at;
+
+  const lastExpire: Record<string, string> = {};
+  (data ?? []).forEach((t: any) => {
+    if (t.type === "expire") lastExpire[t.customer_id] = t.created_at;
+  });
+  (data ?? []).forEach((t: any) => {
+    if (map[t.customer_id]) return;
+    if (t.points_change <= 0) return;
+    const cutoff = lastExpire[t.customer_id];
+    if (cutoff && t.created_at <= cutoff) return;
+    map[t.customer_id] = t.created_at;
   });
   return map;
 }
