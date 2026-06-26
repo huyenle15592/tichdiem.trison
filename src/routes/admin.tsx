@@ -528,14 +528,17 @@ function TransactionList({ items }: { items: Transaction[] }) {
   );
 }
 
-function CustomersSection() {
+function CustomersSection({ staff }: { staff: string }) {
+  const thresholds = useTierThresholds();
   const [items, setItems] = useState<Customer[]>([]);
   const [q, setQ] = useState("");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newBirth, setNewBirth] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
+
 
   async function load() {
     const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
