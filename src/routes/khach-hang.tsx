@@ -416,7 +416,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                 className="text-[11px] font-light italic tracking-[0.15em] md:text-xs"
                 style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
               >
-                Kích hoạt sau lần tích điểm đầu tiên
+                Kích hoạt chu kỳ mới sau lần tích điểm kế tiếp
               </div>
             )}
             <div
