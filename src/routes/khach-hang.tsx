@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Search, Gift, Phone, QrCode, Download, ScrollText } from "lucide-react";
+import { Search, Gift, Phone, Download, ScrollText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { getTier, formatVnd, normalizePhone, cardWindow } from "@/lib/loyalty";
 import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { QrScannerModal } from "@/components/qr-scanner";
+
 
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
