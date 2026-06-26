@@ -305,6 +305,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
           {section === "history" && <HistorySection />}
           {section === "rewards" && <RewardsSection />}
           {section === "tiers" && <TierSettingsSection />}
+          {section === "system" && <SystemConfigSection />}
 
 
         </div>
