@@ -329,6 +329,10 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
 
+        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-8 md:pt-6">
+          <GlobalQuickSearch staff={staff} />
+        </div>
+
         <div className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
           {section === "customers" && <CustomersSection staff={staff} />}
@@ -344,6 +348,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     </div>
   );
 }
+
 
 function Dashboard({ staff }: { staff: string }) {
   const [phone, setPhone] = useState("");
