@@ -9,6 +9,7 @@ import { getTier, formatVnd, normalizePhone } from "@/lib/loyalty";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
+import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
@@ -38,14 +39,21 @@ function CustomerView() {
     }
     setLoading(true);
     setSearched(true);
-    const [{ data: cust }, { data: rws }] = await Promise.all([
-      supabase.from("customers").select("*").eq("phone", p).maybeSingle(),
-      supabase.from("rewards").select("*").eq("active", true).order("points_required"),
-    ]);
-    setCustomer((cust as Customer) ?? null);
-    setRewards((rws as Reward[]) ?? []);
-    setLoading(false);
+    try {
+      const [cust, { data: rws }] = await Promise.all([
+        lookupCustomerByPhone({ data: { phone: p } }),
+        supabase.from("rewards").select("*").eq("active", true).order("points_required"),
+      ]);
+      setCustomer((cust as Customer) ?? null);
+      setRewards((rws as Reward[]) ?? []);
+    } catch (err) {
+      toast.error("Không thể tra cứu. Vui lòng thử lại.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
+
   async function lookup(e?: React.FormEvent) {
     e?.preventDefault();
     await lookupBy(normalizePhone(phone));
