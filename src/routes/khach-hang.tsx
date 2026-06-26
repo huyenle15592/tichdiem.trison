@@ -435,7 +435,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         </div>
       </div>
 
-      </div>
+
 
       {/* Progress / tier-up panel */}
       <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
