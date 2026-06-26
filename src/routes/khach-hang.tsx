@@ -9,9 +9,9 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
 
-import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import trisonLogo from "@/assets/trison-logo.png";
 import { LotusScene } from "@/components/lotus-scene";
-import lotusCardImg from "@/assets/lotus-card.png.asset.json";
+import lotusCardImg from "@/assets/lotus-card.png";
 import { QRCodeSVG } from "qrcode.react";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { getCustomerView } from "@/lib/public-data.functions";

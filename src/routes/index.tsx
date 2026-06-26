@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Crown, ShieldCheck, ArrowRight } from "lucide-react";
-import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import trisonLogo from "@/assets/trison-logo.png";
 import { LotusScene } from "@/components/lotus-scene";
 
 export const Route = createFileRoute("/")({

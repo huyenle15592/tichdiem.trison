@@ -45,7 +45,7 @@ import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import { autoExpireCustomer, fetchExpiringSoon, renewMembershipIfActive, type ExpiringSoon } from "@/lib/expiry";
 import { AlertTriangle, Settings2 } from "lucide-react";
-import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import trisonLogo from "@/assets/trison-logo.png";
 import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { Switch } from "@/components/ui/switch";

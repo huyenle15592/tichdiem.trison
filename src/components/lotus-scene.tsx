@@ -1,4 +1,4 @@
-import lotusCorner from "@/assets/lotus-corner.png.asset.json";
+import lotusCorner from "@/assets/lotus-corner.png";
 
 /**
  * Nền tối giản thượng lưu: ivory phẳng + một họa tiết sen rất mờ ở góc dưới.
