@@ -2268,6 +2268,39 @@ function TierMembersSection({ staff }: { staff: string }) {
             </tbody>
           </table>
         </div>
+        {/* Mobile card list */}
+        <ul className="divide-y md:hidden">
+          {loading && <li className="px-4 py-8 text-center text-muted-foreground">Đang tải dữ liệu…</li>}
+          {!loading && filtered.length === 0 && (
+            <li className="px-4 py-8 text-center text-muted-foreground">Chưa có khách hàng nào ở hạng này.</li>
+          )}
+          {filtered.map((c) => {
+            const tier = getTier(c.points, thresholds);
+            return (
+              <li key={c.id} className="space-y-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <button onClick={() => setQuickAdd(c)} className="min-w-0 text-left">
+                    <div className="truncate text-base font-black text-brand-navy">{c.name}</div>
+                    <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
+                  </button>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Tổng tiền: <span className="font-black text-brand-navy">{formatVnd(c.totalSpend)}</span></span>
+                  <span><span className="text-base font-black text-brand-red">{c.points}</span> <span className="text-xs font-bold text-muted-foreground">điểm</span></span>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setDetail(c)} size="sm" variant="outline" className="h-11 flex-1 rounded-xl text-sm font-bold text-brand-navy">
+                    <History className="mr-1 h-4 w-4" /> Lịch sử
+                  </Button>
+                  <Button onClick={() => setQuickAdd(c)} size="sm" className="h-11 flex-1 rounded-xl bg-brand-red text-sm font-black text-brand-red-foreground hover:bg-brand-red/90">
+                    <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {quickAdd && (
