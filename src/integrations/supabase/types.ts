@@ -44,6 +44,7 @@ export type Database = {
       rewards: {
         Row: {
           active: boolean
+          code: string | null
           created_at: string
           description: string | null
           id: string
@@ -53,6 +54,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          code?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -62,6 +64,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          code?: string | null
           created_at?: string
           description?: string | null
           id?: string

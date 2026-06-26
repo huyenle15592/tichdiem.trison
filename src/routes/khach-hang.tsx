@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Gift, Phone, Download, ScrollText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/khach-hang")({
 });
 
 type Customer = { id: string; name: string; phone: string; points: number; created_at: string; activated_at: string | null };
-type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
+type Reward = { id: string; name: string; code: string | null; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
   const [query, setQuery] = useState("");
@@ -37,6 +37,20 @@ function CustomerView() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
+
+  // Realtime: làm mới danh sách quà khi admin chỉnh sửa
+  useEffect(() => {
+    if (!customer) return;
+    const channel = supabase
+      .channel("rewards-customer")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rewards" }, async () => {
+        const { data } = await supabase.from("rewards").select("*").eq("active", true).order("points_required");
+        setRewards((data as Reward[]) ?? []);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [customer]);
+
 
 
   async function lookupBy(raw: string) {
@@ -475,8 +489,16 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                   {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}
                   <div className="mt-2 text-sm font-bold text-brand-navy">Cần {r.points_required} điểm</div>
                   {enough ? (
-                    <div className="mt-3 rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
-                      ✓ Đủ điểm đổi quà
+                    <div className="mt-3 space-y-2">
+                      <div className="rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
+                        ✓ Đủ điểm đổi quà
+                      </div>
+                      {r.code && (
+                        <div className="rounded-xl border-2 border-dashed border-brand-red bg-brand-red/5 px-3 py-2 text-center">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mã đổi quà — đọc cho thu ngân</div>
+                          <div className="mt-0.5 font-mono text-base font-black text-brand-red">{r.code}</div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="mt-3 rounded-xl bg-muted px-3 py-2 text-center text-sm font-semibold text-muted-foreground">

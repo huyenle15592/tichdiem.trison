@@ -33,6 +33,7 @@ import {
   Save,
   Undo2,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 
 const MANAGER_PASSWORD = "TrisonAdmin2026";
@@ -795,11 +796,15 @@ function HistorySection() {
 }
 
 
-type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean; image_url: string | null };
+
+
+type Reward = { id: string; name: string; code: string | null; description: string | null; points_required: number; active: boolean; image_url: string | null };
 
 function RewardsSection() {
   const [items, setItems] = useState<Reward[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [desc, setDesc] = useState("");
   const [pts, setPts] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -809,6 +814,11 @@ function RewardsSection() {
     setItems((data as Reward[]) ?? []);
   }
   useEffect(() => { load(); }, []);
+
+  function resetForm() {
+    setEditingId(null);
+    setName(""); setCode(""); setDesc(""); setPts(""); setImageUrl("");
+  }
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -824,32 +834,45 @@ function RewardsSection() {
     e.target.value = "";
   }
 
-  async function add(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const p = Number(pts);
     if (!name.trim() || !p) { toast.error("Vui lòng nhập tên và số điểm"); return; }
-    const { error } = await supabase.from("rewards").insert({
+    if (!code.trim()) { toast.error("Vui lòng nhập Mã sản phẩm / Mã đổi quà"); return; }
+    const payload = {
       name: name.trim(),
+      code: code.trim(),
       description: desc || null,
       points_required: p,
       image_url: imageUrl || null,
-      active: true,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success("Đã thêm quà tặng"); setName(""); setDesc(""); setPts(""); setImageUrl(""); load(); }
+    };
+    if (editingId) {
+      const { error } = await supabase.from("rewards").update(payload as never).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Đã cập nhật quà tặng");
+    } else {
+      const { error } = await supabase.from("rewards").insert({ ...payload, active: true } as never);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Đã thêm quà tặng");
+    }
+    resetForm();
+    load();
   }
 
-  async function updateImage(id: string) {
-    const url = prompt("Dán URL hình ảnh quà tặng (https://...):", "");
-    if (url === null) return;
-    const { error } = await supabase.from("rewards").update({ image_url: url || null }).eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Đã cập nhật hình ảnh"); load(); }
+  function startEdit(r: Reward) {
+    setEditingId(r.id);
+    setName(r.name);
+    setCode(r.code ?? "");
+    setDesc(r.description ?? "");
+    setPts(String(r.points_required));
+    setImageUrl(r.image_url ?? "");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function remove(id: string) {
     if (!confirm("Xoá quà tặng này?")) return;
     await supabase.from("rewards").delete().eq("id", id);
+    if (editingId === id) resetForm();
     load();
   }
 
@@ -857,12 +880,30 @@ function RewardsSection() {
     <div className="space-y-5">
       <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Cài đặt quà tặng</h1>
 
-      <form onSubmit={add} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
-        <div className="grid gap-3 md:grid-cols-[2fr_2fr_1fr_auto]">
+      <form onSubmit={submit} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+        {editingId && (
+          <div className="mb-3 flex items-center justify-between rounded-xl bg-brand-navy/5 px-3 py-2 text-sm font-bold text-brand-navy">
+            <span>✏️ Đang chỉnh sửa: {name || "(chưa đặt tên)"}</span>
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm} className="text-brand-red">
+              <X className="mr-1 h-4 w-4" /> Hủy
+            </Button>
+          </div>
+        )}
+        <div className="grid gap-3 md:grid-cols-2">
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên quà tặng" className="h-12 rounded-xl border-2" />
+          <Input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Mã sản phẩm / Mã đổi quà (Tự đặt). Ví dụ: TS-YEN-NHUY-HOA"
+            className="h-12 rounded-xl border-2 font-mono uppercase"
+          />
+        </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-[2fr_1fr_auto]">
           <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Mô tả" className="h-12 rounded-xl border-2" />
-          <Input value={pts} onChange={(e) => setPts(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Điểm cần" className="h-12 rounded-xl border-2" />
-          <Button type="submit" className="h-12 rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm</Button>
+          <Input value={pts} onChange={(e) => setPts(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Điểm cần đổi" className="h-12 rounded-xl border-2" />
+          <Button type="submit" className="h-12 rounded-xl bg-brand-navy px-6 font-bold text-brand-navy-foreground">
+            {editingId ? "CẬP NHẬT THAY ĐỔI" : "Thêm"}
+          </Button>
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto]">
@@ -890,7 +931,25 @@ function RewardsSection() {
 
       <div className="grid gap-3 md:grid-cols-2">
         {items.map((r) => (
-          <div key={r.id} className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
+          <div key={r.id} className="relative overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
+            <div className="absolute right-2 top-2 z-10 flex gap-1">
+              <button
+                type="button"
+                onClick={() => startEdit(r)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-white shadow-md transition hover:bg-brand-navy/90"
+                title="Chỉnh sửa"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(r.id)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-white shadow-md transition hover:bg-brand-red/90"
+                title="Xoá"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
             {r.image_url ? (
               <img src={r.image_url} alt={r.name} className="h-40 w-full object-cover" />
             ) : (
@@ -898,18 +957,15 @@ function RewardsSection() {
                 <ImageIcon className="h-10 w-10 opacity-40" />
               </div>
             )}
-            <div className="flex items-start justify-between gap-2 p-4">
-              <div>
-                <div className="font-black text-foreground">{r.name}</div>
-                {r.description && <div className="text-sm text-muted-foreground">{r.description}</div>}
-                <div className="mt-2 text-sm font-bold text-brand-red">{r.points_required} điểm</div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Button onClick={() => updateImage(r.id)} variant="ghost" size="sm" className="text-brand-navy">
-                  <ImageIcon className="mr-1 h-4 w-4" /> Ảnh
-                </Button>
-                <Button onClick={() => remove(r.id)} variant="ghost" size="sm" className="text-brand-red">Xoá</Button>
-              </div>
+            <div className="p-4">
+              <div className="font-black text-foreground">{r.name}</div>
+              {r.code && (
+                <div className="mt-1 inline-block rounded-md bg-brand-navy/10 px-2 py-0.5 font-mono text-xs font-bold text-brand-navy">
+                  {r.code}
+                </div>
+              )}
+              {r.description && <div className="mt-1 text-sm text-muted-foreground">{r.description}</div>}
+              <div className="mt-2 text-sm font-bold text-brand-red">{r.points_required} điểm</div>
             </div>
           </div>
         ))}
@@ -917,6 +973,7 @@ function RewardsSection() {
     </div>
   );
 }
+
 
 // ============================================================
 // Birthday helpers + components
