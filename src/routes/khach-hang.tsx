@@ -237,36 +237,37 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
     bg:
       "linear-gradient(135deg, #ffffff 0%, #f1f3f7 45%, #d9dde4 100%)",
     text: "#0a1e3f",
-    subtext: "rgba(10, 30, 63, 0.7)",
-    pointsColor: "#b8860b",
-    progressTrack: "rgba(10, 30, 63, 0.12)",
-    progressFill: "linear-gradient(90deg, #b8860b, #f6c945)",
+    subtext: "rgba(10, 30, 63, 0.78)",
+    pointsColor: "#0a1e3f",
+    progressTrack: "rgba(10, 30, 63, 0.15)",
+    progressFill: "linear-gradient(90deg, #0a1e3f, #1e3a8a)",
     logoBg: "#ffffff",
     lotus: "pink",
   },
   gold: {
     bg:
       "radial-gradient(ellipse at 30% 30%, #fff2c2 0%, transparent 55%), linear-gradient(135deg, #c9962b 0%, #f6cf64 45%, #a87a2c 100%)",
-    text: "#3a1f0a",
-    subtext: "rgba(58, 31, 10, 0.78)",
-    pointsColor: "#7a1414",
-    progressTrack: "rgba(58, 31, 10, 0.18)",
-    progressFill: "linear-gradient(90deg, #7a1414, #c9962b)",
+    text: "#0a1e3f",
+    subtext: "rgba(10, 30, 63, 0.82)",
+    pointsColor: "#0a1e3f",
+    progressTrack: "rgba(10, 30, 63, 0.2)",
+    progressFill: "linear-gradient(90deg, #0a1e3f, #7a1414)",
     logoBg: "#fff8e3",
     lotus: "pink",
   },
   diamond: {
     bg:
       "radial-gradient(ellipse at 25% 20%, #2a2a2a 0%, transparent 60%), linear-gradient(135deg, #050505 0%, #1a1a1a 50%, #2e2e2e 100%)",
-    text: "#f5f5f5",
-    subtext: "rgba(245, 245, 245, 0.7)",
-    pointsColor: "#e9ecf2",
-    progressTrack: "rgba(255, 255, 255, 0.15)",
+    text: "#ffffff",
+    subtext: "rgba(245, 245, 245, 0.78)",
+    pointsColor: "#ffffff",
+    progressTrack: "rgba(255, 255, 255, 0.18)",
     progressFill: "linear-gradient(90deg, #ffffff, #cfd3dc)",
     logoBg: "#ffffff",
     lotus: "pink",
   },
 };
+
 
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
   const thresholds = useTierThresholds();
