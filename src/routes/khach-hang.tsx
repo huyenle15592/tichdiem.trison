@@ -338,7 +338,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
 
       {/* Lotusmiles-style member card */}
       <div
-        className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
+        className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
         style={{ background: theme.bg, color: theme.text, aspectRatio: "1.586 / 1", minHeight: 230 }}
       >
         {/* Real lotus photo decoration — bottom-right, larger spread */}
