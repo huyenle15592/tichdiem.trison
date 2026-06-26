@@ -226,7 +226,7 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 };
 
 
-function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
+function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewards: Reward[]; recentTx: RecentTx[] }) {
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
   const qrRef = useRef<HTMLDivElement | null>(null);
