@@ -21,22 +21,22 @@ function PortalView() {
   return (
     <div className="relative min-h-screen bg-transparent">
       <LotusScene />
-      <header className="relative mx-auto max-w-6xl px-5 pt-10 pb-2 text-center md:pt-14">
+      <header className="relative mx-auto max-w-6xl px-4 pt-6 pb-1 text-center sm:px-5 sm:pt-10 md:pt-14">
         <img
           src={trisonLogo.url}
           alt="Yến sào Trí Sơn"
-          className="mx-auto h-40 w-auto md:h-56"
+          className="mx-auto h-40 w-auto sm:h-48 md:h-56"
           style={{ mixBlendMode: "multiply" }}
         />
-        <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-4 md:text-6xl">
+        <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight text-brand-navy sm:mt-3 sm:text-4xl md:mt-4 md:text-6xl">
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
+        <p className="mx-auto mt-3 max-w-xl text-sm font-medium text-muted-foreground sm:text-base md:text-lg">
           Hệ thống Tích điểm Thành viên — Tri ân khách hàng{"\u00a0"}
         </p>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-5 py-10 md:grid-cols-2 md:gap-8 md:py-16">
+      <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:gap-6 sm:px-5 sm:py-10 md:grid-cols-2 md:gap-8 md:py-16">
         <PortalCard
           to="/khach-hang"
           accent="navy"
@@ -95,7 +95,7 @@ function PortalCard({
   return (
     <Link
       to={to}
-      className="group relative block overflow-hidden rounded-[28px] border border-border/70 bg-white p-8 text-left transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:p-10"
+      className="group relative block overflow-hidden rounded-3xl border border-border/70 bg-white p-6 text-left transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:rounded-[28px] sm:p-8 md:p-10"
       style={{
         boxShadow: "var(--shadow-float)",
         // @ts-expect-error custom prop

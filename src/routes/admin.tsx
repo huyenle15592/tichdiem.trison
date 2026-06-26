@@ -50,7 +50,8 @@ import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { Switch } from "@/components/ui/switch";
 import { sendZaloNotification, loadZnsSettings, saveZnsSettings, DEFAULT_ZNS_SETTINGS, type ZnsSettings } from "@/lib/zalo-zns";
-import { Camera } from "lucide-react";
+import { Camera, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 
 export const Route = createFileRoute("/admin")({
@@ -268,37 +269,67 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       <div className="md:hidden">
-        <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground">
+        <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground shadow-md">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-sidebar-foreground hover:bg-sidebar-accent">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground">
+              <div className="border-b border-sidebar-border px-5 py-5">
+                <div className="flex items-center gap-3">
+                  <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-12 w-12 object-contain" />
+                  <div>
+                    <div className="text-sm font-black leading-tight">YẾN SÀO</div>
+                    <div className="text-xs font-bold leading-tight text-sidebar-foreground/70">TRÍ SƠN</div>
+                  </div>
+                </div>
+              </div>
+              <nav className="space-y-1 px-3 py-4">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = section === item.id;
+                  return (
+                    <SheetTrigger asChild key={item.id}>
+                      <button
+                        onClick={() => setSection(item.id)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition ${
+                          active ? "bg-brand-red text-brand-red-foreground" : "text-sidebar-foreground/80 hover:bg-sidebar-accent"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </button>
+                    </SheetTrigger>
+                  );
+                })}
+              </nav>
+              <div className="border-t border-sidebar-border p-3">
+                <Label className="text-xs text-sidebar-foreground/60">Thu ngân</Label>
+                <Input
+                  value={staff}
+                  onChange={(e) => { setStaff(e.target.value); localStorage.setItem("trison_staff", e.target.value); }}
+                  className="mt-1 h-10 rounded-lg border-sidebar-border bg-sidebar-accent text-sidebar-foreground"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
           <div className="flex items-center gap-2">
-            <img
-              src={trisonLogo.url}
-              alt="Yến sào Trí Sơn"
-              className="h-9 w-9 object-contain"
-            />
-            <span className="text-sm font-black">TRÍ SƠN ADMIN</span>
+            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-8 w-8 object-contain" />
+            <span className="text-sm font-black">
+              {navItems.find((n) => n.id === section)?.label ?? "TRÍ SƠN"}
+            </span>
           </div>
-          <Button onClick={onLogout} variant="ghost" size="sm" className="text-sidebar-foreground">
-            <LogOut className="h-4 w-4" />
+          <Button onClick={onLogout} variant="ghost" size="sm" className="h-10 w-10 p-0 text-sidebar-foreground hover:bg-sidebar-accent">
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
       <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
-        <div className="flex gap-2 overflow-x-auto px-4 py-3 md:hidden">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSection(item.id)}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold ${
-                section === item.id ? "bg-brand-navy text-white" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
 
-        <div className="mx-auto max-w-5xl px-4 py-4 md:px-8 md:py-8">
+        <div className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
           {section === "customers" && <CustomersSection staff={staff} />}
           {section === "tier-members" && <TierMembersSection staff={staff} />}
@@ -870,72 +901,91 @@ function CustomersSection({ staff }: { staff: string }) {
             {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
           </ul>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-[Montserrat]">
-              <thead className="bg-brand-navy/5 text-xs font-black uppercase tracking-wider text-brand-navy">
-                <tr>
-                  <th className="px-4 py-3">Họ và Tên</th>
-                  <th className="px-4 py-3">Số điện thoại</th>
-                  <th className="px-4 py-3">Hạng hiện tại</th>
-                  <th className="px-4 py-3">Ngày mua cuối</th>
-                  <th className="px-4 py-3">Số ngày bỏ quên</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y text-sm">
-                {inactiveList.map(({ c, last, days }) => {
-                  const tier = getTier(c.points, thresholds);
-                  return (
-                    <tr key={c.id} className="hover:bg-brand-navy/5">
-                      <td className="px-4 py-3 font-bold text-foreground">{c.name}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono">{c.phone}</span>
-                          <Button
-                            onClick={() => copyPhone(c.phone)}
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10"
-                            title="Copy SĐT để gửi Zalo"
-                          >
+          <>
+            {/* Mobile card list */}
+            <ul className="divide-y md:hidden">
+              {inactiveList.map(({ c, last, days }) => {
+                const tier = getTier(c.points, thresholds);
+                return (
+                  <li key={c.id} className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-black text-brand-navy">{c.name}</div>
+                        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
+                          {c.phone}
+                          <Button onClick={() => copyPhone(c.phone)} size="sm" variant="ghost" className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10">
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>
-                          {tier.name}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-semibold">{formatDate(last)}</td>
-                      <td className="px-4 py-3">
-                        <span className="rounded-full bg-brand-red/10 px-2.5 py-1 text-xs font-black text-brand-red">
-                          {days} ngày chưa mua
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          onClick={() => setQuickAdd(c)}
-                          size="sm"
-                          className="h-9 rounded-lg bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90"
-                        >
-                          <Plus className="mr-1 h-3.5 w-3.5" /> Cộng điểm
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {inactiveList.length === 0 && (
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-semibold text-muted-foreground">Mua cuối: <span className="text-foreground">{formatDate(last)}</span></span>
+                      <span className="rounded-full bg-brand-red/10 px-2.5 py-1 font-black text-brand-red">{days} ngày chưa mua</span>
+                    </div>
+                    <Button onClick={() => setQuickAdd(c)} className="h-11 w-full rounded-xl bg-brand-red text-sm font-black text-brand-red-foreground hover:bg-brand-red/90">
+                      <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                    </Button>
+                  </li>
+                );
+              })}
+              {inactiveList.length === 0 && (
+                <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào quá hạn theo bộ lọc này. 🎉</li>
+              )}
+            </ul>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left font-[Montserrat]">
+                <thead className="bg-brand-navy/5 text-xs font-black uppercase tracking-wider text-brand-navy">
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
-                      Không có khách hàng nào quá hạn theo bộ lọc này. 🎉
-                    </td>
+                    <th className="px-4 py-3">Họ và Tên</th>
+                    <th className="px-4 py-3">Số điện thoại</th>
+                    <th className="px-4 py-3">Hạng hiện tại</th>
+                    <th className="px-4 py-3">Ngày mua cuối</th>
+                    <th className="px-4 py-3">Số ngày bỏ quên</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y text-sm">
+                  {inactiveList.map(({ c, last, days }) => {
+                    const tier = getTier(c.points, thresholds);
+                    return (
+                      <tr key={c.id} className="hover:bg-brand-navy/5">
+                        <td className="px-4 py-3 font-bold text-foreground">{c.name}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{c.phone}</span>
+                            <Button onClick={() => copyPhone(c.phone)} size="sm" variant="ghost" className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10" title="Copy SĐT để gửi Zalo">
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                        </td>
+                        <td className="px-4 py-3 font-semibold">{formatDate(last)}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-brand-red/10 px-2.5 py-1 text-xs font-black text-brand-red">{days} ngày chưa mua</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button onClick={() => setQuickAdd(c)} size="sm" className="h-9 rounded-lg bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90">
+                            <Plus className="mr-1 h-3.5 w-3.5" /> Cộng điểm
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {inactiveList.length === 0 && (
+                    <tr><td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào quá hạn theo bộ lọc này. 🎉</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
+
 
       </div>
 
@@ -1339,7 +1389,7 @@ function ExpiringCardsSoon() {
           Không có khách nào sắp hết hạn thẻ trong 30 ngày tới.
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+        <div className="mt-4 hidden overflow-x-auto rounded-xl border bg-card md:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -1387,6 +1437,42 @@ function ExpiringCardsSoon() {
             </tbody>
           </table>
         </div>
+      )}
+      {/* Mobile card list for expiring soon */}
+      {!loading && items.length > 0 && (
+        <ul className="mt-4 space-y-2 md:hidden">
+          {items.map((c) => {
+            const urgent = c.daysLeft <= 7;
+            return (
+              <li key={c.id} className="space-y-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-soft)]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-black text-brand-navy">{c.name}</div>
+                    <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
+                  </div>
+                  <span className="shrink-0 rounded-full px-2.5 py-1 text-xs font-black text-white" style={{ background: urgent ? "#dc2626" : "#d97706" }}>
+                    {c.daysLeft === 0 ? "Hết hôm nay" : `${c.daysLeft} ngày`}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <span className="font-bold text-foreground">{c.points} điểm</span>
+                  <span className="text-muted-foreground">Hết hạn: {fmt(c.validThrough)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => copyPhone(c.phone)} size="sm" variant="outline" className="h-10 flex-1 rounded-lg text-xs font-bold">
+                    <Copy className="mr-1 h-4 w-4" /> Copy SĐT
+                  </Button>
+                  <a href={`tel:${c.phone}`} className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-brand-navy px-2.5 text-xs font-bold text-brand-navy-foreground">
+                    <Phone className="h-4 w-4" /> Gọi
+                  </a>
+                  <a href={`https://zalo.me/${c.phone}`} target="_blank" rel="noreferrer" className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-[#0068ff] px-2.5 text-xs font-bold text-white">
+                    <MessageCircle className="h-4 w-4" /> Zalo
+                  </a>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
@@ -2124,7 +2210,7 @@ function TierMembersSection({ staff }: { staff: string }) {
             Danh sách {tierCards.find((c) => c.key === activeTier)?.name} ({filtered.length})
           </h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -2182,6 +2268,39 @@ function TierMembersSection({ staff }: { staff: string }) {
             </tbody>
           </table>
         </div>
+        {/* Mobile card list */}
+        <ul className="divide-y md:hidden">
+          {loading && <li className="px-4 py-8 text-center text-muted-foreground">Đang tải dữ liệu…</li>}
+          {!loading && filtered.length === 0 && (
+            <li className="px-4 py-8 text-center text-muted-foreground">Chưa có khách hàng nào ở hạng này.</li>
+          )}
+          {filtered.map((c) => {
+            const tier = getTier(c.points, thresholds);
+            return (
+              <li key={c.id} className="space-y-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <button onClick={() => setQuickAdd(c)} className="min-w-0 text-left">
+                    <div className="truncate text-base font-black text-brand-navy">{c.name}</div>
+                    <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
+                  </button>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Tổng tiền: <span className="font-black text-brand-navy">{formatVnd(c.totalSpend)}</span></span>
+                  <span><span className="text-base font-black text-brand-red">{c.points}</span> <span className="text-xs font-bold text-muted-foreground">điểm</span></span>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setDetail(c)} size="sm" variant="outline" className="h-11 flex-1 rounded-xl text-sm font-bold text-brand-navy">
+                    <History className="mr-1 h-4 w-4" /> Lịch sử
+                  </Button>
+                  <Button onClick={() => setQuickAdd(c)} size="sm" className="h-11 flex-1 rounded-xl bg-brand-red text-sm font-black text-brand-red-foreground hover:bg-brand-red/90">
+                    <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {quickAdd && (

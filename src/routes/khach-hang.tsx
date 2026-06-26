@@ -157,7 +157,7 @@ function CustomerView() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-6 md:py-10">
+      <main className="mx-auto max-w-2xl px-4 py-6 md:py-10 lg:max-w-5xl">
         {!customer && (
           <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
             <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
@@ -338,7 +338,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
 
       {/* Lotusmiles-style member card */}
       <div
-        className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
+        className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
         style={{ background: theme.bg, color: theme.text, aspectRatio: "1.586 / 1", minHeight: 230 }}
       >
         {/* Real lotus photo decoration — bottom-right, larger spread */}
@@ -498,7 +498,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-brand-navy">
           <Gift className="h-5 w-5 text-brand-red" /> Đổi quà ưu đãi
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {rewards.map((r) => {
             const enough = customer.points >= r.points_required;
             return (
@@ -520,7 +520,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                     <button
                       type="button"
                       onClick={() => setRedeemReward(r)}
-                      className="mt-3 w-full rounded-xl bg-success px-3 py-2.5 text-center text-sm font-black uppercase tracking-wide text-success-foreground shadow-md transition hover:brightness-110 active:scale-[0.98]"
+                      className="mt-3 min-h-12 w-full rounded-xl bg-success px-3 py-3 text-center text-sm font-black uppercase tracking-wide text-success-foreground shadow-md transition hover:brightness-110 active:scale-[0.98]"
                     >
                       ✓ Đủ điểm — Đổi quà
                     </button>
