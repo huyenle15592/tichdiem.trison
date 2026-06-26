@@ -48,78 +48,56 @@ type Transaction = {
   created_at: string;
 };
 
+const SHARED_PASSWORD = "Trison2026";
+const AUTH_KEY = "trison_admin_authed";
+
 function AdminView() {
-  const [checking, setChecking] = useState(true);
   const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setAuthed(!!data.session);
-      setChecking(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setAuthed(!!session);
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
+    if (typeof window !== "undefined") {
+      setAuthed(sessionStorage.getItem(AUTH_KEY) === "1");
+    }
+    setChecking(false);
   }, []);
 
   if (checking) {
     return (
       <div className="grid min-h-screen place-items-center bg-brand-navy text-brand-navy-foreground">
-        <div className="text-sm font-bold opacity-80">Đang kiểm tra phiên đăng nhập…</div>
+        <div className="text-sm font-bold opacity-80">Đang tải…</div>
       </div>
     );
   }
-  if (!authed) return <LoginGate />;
+  if (!authed) return <LoginGate onSuccess={() => setAuthed(true)} />;
   return (
     <AdminShell
-      onLogout={async () => {
-        await supabase.auth.signOut();
+      onLogout={() => {
+        sessionStorage.removeItem(AUTH_KEY);
         setAuthed(false);
       }}
     />
   );
 }
 
-function LoginGate() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
+function LoginGate({ onSuccess }: { onSuccess: () => void }) {
   const [pwd, setPwd] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || pwd.length < 6) {
-      toast.error("Vui lòng nhập email và mật khẩu (ít nhất 6 ký tự)");
-      return;
-    }
     setLoading(true);
-    try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-        if (error) throw error;
+    setTimeout(() => {
+      if (pwd === SHARED_PASSWORD) {
+        sessionStorage.setItem(AUTH_KEY, "1");
         toast.success("Đăng nhập thành công");
+        onSuccess();
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password: pwd,
-          options: { emailRedirectTo: window.location.origin + "/admin" },
-        });
-        if (error) throw error;
-        toast.success("Tạo tài khoản nhân viên thành công");
+        toast.error("Mật khẩu không đúng");
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Có lỗi xảy ra";
-      toast.error(msg);
-    } finally {
       setLoading(false);
-    }
+    }, 200);
   };
 
   return (
@@ -133,32 +111,20 @@ function LoginGate() {
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red text-brand-red-foreground">
             <Lock className="h-7 w-7" />
           </div>
-          <h1 className="mt-4 text-2xl font-black text-brand-navy">
-            {mode === "signin" ? "Đăng nhập Nhân viên" : "Tạo tài khoản Nhân viên"}
-          </h1>
+          <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>
 
-        <Label className="text-sm font-bold">Email nhân viên</Label>
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-2 h-12 rounded-xl border-2 text-base"
-          placeholder="nhanvien@trison.vn"
-          autoComplete="email"
-          autoFocus
-        />
-
-        <Label className="mt-4 block text-sm font-bold">Mật khẩu</Label>
+        <Label className="block text-sm font-bold">Mật khẩu chung của nhân viên</Label>
         <div className="relative mt-2">
           <Input
             type={show ? "text" : "password"}
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             className="h-12 rounded-xl border-2 pr-12 text-base"
-            placeholder="••••••••"
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            placeholder="Nhập mật khẩu…"
+            autoComplete="current-password"
+            autoFocus
           />
           <button
             type="button"
@@ -184,22 +150,13 @@ function LoginGate() {
           disabled={loading}
           className="mt-5 h-12 w-full rounded-xl bg-brand-red text-base font-bold text-brand-red-foreground hover:bg-brand-red/90"
         >
-          {loading ? "Đang xử lý..." : mode === "signin" ? "Đăng nhập" : "Tạo tài khoản"}
+          {loading ? "Đang kiểm tra..." : "Đăng nhập"}
         </Button>
-
-        <button
-          type="button"
-          onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
-          className="mt-4 w-full text-center text-sm font-semibold text-brand-navy hover:underline"
-        >
-          {mode === "signin"
-            ? "Chưa có tài khoản? Tạo tài khoản nhân viên mới"
-            : "Đã có tài khoản? Đăng nhập"}
-        </button>
       </form>
     </div>
   );
 }
+
 
 
 type Section = "dashboard" | "customers" | "history" | "rewards";
