@@ -414,7 +414,7 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
           <div className="text-xl font-black text-brand-navy">{customer.name}</div>
           <div className="text-sm font-semibold text-muted-foreground">{customer.phone}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Thẻ: {formatVnDate(customer.created_at)} → {formatVnDate(addOneYearIso(customer.created_at))}
+            {win.activated ? <>Thẻ: {win.memberSince} → {win.validThrough}</> : <span className="italic">Thẻ: Chưa kích hoạt</span>}
           </div>
         </div>
         <div className={`rounded-xl px-4 py-2 text-center ${tierPillClass(tier.key)}`}>
