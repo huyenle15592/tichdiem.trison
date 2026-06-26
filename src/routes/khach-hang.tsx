@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Search, Gift, Phone, QrCode, Download, ScrollText } from "lucide-react";
+import { Search, Gift, Phone, Download, ScrollText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { getTier, formatVnd, normalizePhone, cardWindow } from "@/lib/loyalty";
 import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { QrScannerModal } from "@/components/qr-scanner";
+
 
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
@@ -37,7 +37,7 @@ function CustomerView() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
+
 
   async function lookupBy(raw: string) {
     const q = raw.trim();
@@ -99,13 +99,6 @@ function CustomerView() {
     await lookupBy(query);
   }
 
-  function handleQrResult(text: string) {
-    setQrOpen(false);
-    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
-    const p = normalizePhone(cleaned);
-    setQuery(p);
-    lookupBy(p);
-  }
 
 
   return (
@@ -151,23 +144,8 @@ function CustomerView() {
                 {loading ? "Đang tra..." : "Tra cứu điểm"}
               </Button>
             </div>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <Button
-              type="button"
-              onClick={() => setQrOpen(true)}
-              variant="outline"
-              className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
-            >
-              <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
-            </Button>
           </form>
         )}
-
-        <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
 
 
         {searched && !loading && !customer && (
