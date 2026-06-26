@@ -13,6 +13,7 @@ import { QrScannerModal } from "@/components/qr-scanner";
 
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
+import lotusCardImg from "@/assets/lotus-card.png.asset.json";
 import { QRCodeSVG } from "qrcode.react";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 
@@ -313,8 +314,21 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         {/* Lotus motif */}
         <LotusBg tone={theme.lotus} />
 
+        {/* Real lotus photo decoration — bottom-right */}
+        <img
+          src={lotusCardImg.url}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-auto w-[38%] max-w-[200px] select-none object-contain"
+          style={{
+            mixBlendMode: tier.key === "diamond" ? "screen" : "multiply",
+            opacity: tier.key === "diamond" ? 0.35 : tier.key === "gold" ? 0.45 : 0.5,
+            transform: "translate(8%, 12%)",
+          }}
+        />
+
         {/* Content */}
-        <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
+        <div className="relative z-10 flex h-full flex-col justify-between p-5 md:p-6">
           {/* Top: logo + tier name */}
           <div className="flex items-center gap-4 md:gap-5">
             <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
