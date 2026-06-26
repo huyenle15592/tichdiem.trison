@@ -477,6 +477,43 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
           })}
         </div>
       </div>
+
+      {/* Rules & member regulations */}
+      <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-brand-navy">
+          <ScrollText className="h-5 w-5 text-brand-red" /> 📜 Luật tích điểm & Quy định thành viên
+        </h2>
+        <ul className="space-y-3 text-sm leading-relaxed text-foreground">
+          <li>
+            <span className="font-bold text-brand-navy">• Luật tích điểm: </span>
+            Cứ mỗi <span className="font-bold">100.000đ</span> trên hóa đơn mua hàng ={" "}
+            <span className="font-bold text-brand-red">1 điểm</span> thưởng.
+          </li>
+          <li>
+            <span className="font-bold text-brand-navy">• Thời hạn thẻ: </span>
+            Thẻ có giá trị sử dụng trong vòng <span className="font-bold">1 năm (12 tháng)</span> kể từ ngày phát sinh giao dịch tích điểm đầu tiên.
+          </li>
+          <li>
+            <span className="font-bold text-brand-navy">• Quy định mốc hạng:</span>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Bạc</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">Dưới {thresholds.goldMin} điểm</div>
+              </div>
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Vàng</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">
+                  Từ {thresholds.goldMin} - {thresholds.diamondMin - 1} điểm
+                </div>
+              </div>
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Kim Cương</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">Từ {thresholds.diamondMin} điểm trở lên</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }
