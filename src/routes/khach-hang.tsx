@@ -240,6 +240,40 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
+  const qrRef = useRef<HTMLDivElement | null>(null);
+
+  function downloadQR() {
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) { toast.error("Không tạo được mã QR"); return; }
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svg64 = btoa(unescape(encodeURIComponent(xml)));
+    const img = new Image();
+    img.onload = () => {
+      const size = 720;
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 40, 40, size - 80, size - 80);
+      c.toBlob((b) => {
+        if (!b) return;
+        const url = URL.createObjectURL(b);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `tri-son-qr-${customer.phone}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        toast.success("Đã tải mã QR về máy");
+      }, "image/png");
+    };
+    img.onerror = () => toast.error("Không tải được mã QR");
+    img.src = `data:image/svg+xml;base64,${svg64}`;
+  }
+
 
   const theme = TIER_THEMES[tier.key];
   const progress = tier.next
