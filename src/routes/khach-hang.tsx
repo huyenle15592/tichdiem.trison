@@ -398,8 +398,14 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
               <span>{tier.min} điểm</span>
               <span>{tier.next} điểm</span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Tương đương mức chi tiêu {formatVnd(customer.points * 100000)}
+            <p
+              className="mt-3 text-center text-base font-extrabold leading-snug md:text-lg"
+              style={{ fontFamily: "'Montserrat', sans-serif", color: "var(--brand-red)" }}
+            >
+              Cần chi tiêu thêm: {formatVnd(remaining * 100000)} để lên hạng {tier.key === "silver" ? "Vàng" : "Kim Cương"}
+            </p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Tương đương mức chi tiêu hiện tại: {formatVnd(customer.points * 100000)}
             </p>
           </>
         ) : (
