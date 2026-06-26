@@ -1,0 +1,1 @@
+ALTER TABLE public.rewards ADD COLUMN IF NOT EXISTS code text;
