@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
 import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
+import { QRCodeSVG } from "qrcode.react";
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
@@ -196,6 +197,24 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         ) : (
           <p className="text-center text-sm font-bold text-brand-navy">🎉 Bạn đã đạt hạng cao nhất - Kim Cương!</p>
         )}
+      </div>
+
+      <div className="rounded-2xl border bg-card p-5 text-center shadow-[var(--shadow-soft)]">
+        <div className="mb-3 text-sm font-bold uppercase tracking-wider text-brand-navy">
+          Mã QR thẻ thành viên
+        </div>
+        <div className="mx-auto inline-block rounded-2xl bg-white p-4 ring-1 ring-border">
+          <QRCodeSVG
+            value={`trison:phone:${customer.phone}`}
+            size={180}
+            level="M"
+            bgColor="#ffffff"
+            fgColor="#0a1e3f"
+          />
+        </div>
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
+          Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
+        </p>
       </div>
 
       <div>
