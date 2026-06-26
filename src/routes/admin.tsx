@@ -1169,7 +1169,74 @@ function EditCustomerModal({
               </div>
             )}
           </div>
+
+          {/* Manager-only direct points edit */}
+          <div className="rounded-xl border-2 border-dashed border-brand-navy/30 bg-brand-navy/5 p-3">
+            <button
+              type="button"
+              onClick={() => setMgrOpen((s) => !s)}
+              className="flex w-full items-center justify-between gap-2 text-left"
+            >
+              <span className="flex items-center gap-2 text-sm font-black text-brand-navy">
+                <ShieldAlert className="h-4 w-4" />
+                Chỉnh sửa số điểm trực tiếp (Chỉ dành cho Quản lý)
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">{mgrOpen ? "Đóng" : "Mở"}</span>
+            </button>
+
+            {mgrOpen && (
+              <div className="mt-3 space-y-3">
+                {!mgrUnlocked ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-muted-foreground">
+                      Mật khẩu Quản lý để mở khóa
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        value={mgrPwd}
+                        onChange={(e) => setMgrPwd(e.target.value)}
+                        placeholder="Nhập mật khẩu cấp cao…"
+                        className="h-11 rounded-xl border-2"
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); tryUnlock(); } }}
+                      />
+                      <Button type="button" onClick={tryUnlock} className="h-11 rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">
+                        Mở khóa
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tính năng này cho phép sửa trực tiếp số điểm khách (ví dụ từ 15 → 12) — chỉ dùng khi cần sửa sai đặc biệt.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs font-black uppercase text-brand-navy">
+                      ✔ Đã mở khóa — Số điểm trực tiếp
+                    </Label>
+                    <Input
+                      inputMode="numeric"
+                      value={directPoints}
+                      onChange={(e) => setDirectPoints(e.target.value.replace(/[^0-9]/g, ""))}
+                      className="mt-1 h-14 rounded-xl border-2 border-brand-navy text-2xl font-black text-brand-navy"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Hiện tại: <span className="font-bold">{customer.points} điểm</span>. Khi lưu, hệ thống sẽ
+                      ghi nhận một bản ghi <span className="font-bold text-brand-navy">"Điều chỉnh bởi Quản lý"</span>
+                      {" "}vào lịch sử.
+                    </p>
+                    {Number(directPoints) !== customer.points && Number.isFinite(Number(directPoints)) && (
+                      <p className="mt-1 text-xs font-bold text-brand-red">
+                        Sẽ chỉnh: {customer.points} → {Number(directPoints)} điểm
+                        {addPoints > 0 && " (ô số tiền hóa đơn sẽ bị bỏ qua)"}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
 
         <div className="mt-5 flex gap-2">
           <Button type="button" onClick={remove} variant="ghost" className="text-brand-red">Xoá</Button>
