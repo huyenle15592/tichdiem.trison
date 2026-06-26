@@ -99,13 +99,6 @@ function CustomerView() {
     await lookupBy(query);
   }
 
-  function handleQrResult(text: string) {
-    setQrOpen(false);
-    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
-    const p = normalizePhone(cleaned);
-    setQuery(p);
-    lookupBy(p);
-  }
 
 
   return (
