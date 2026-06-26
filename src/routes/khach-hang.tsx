@@ -51,6 +51,23 @@ function CustomerView() {
     return () => { supabase.removeChannel(channel); };
   }, [customer]);
 
+  // Realtime: lắng nghe thay đổi điểm của chính khách hàng (đổi quà, cộng điểm)
+  useEffect(() => {
+    if (!customer) return;
+    const channel = supabase
+      .channel(`customer-${customer.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "customers", filter: `id=eq.${customer.id}` },
+        (payload) => {
+          const next = payload.new as { points: number; name: string; phone: string };
+          setCustomer((prev) => (prev ? { ...prev, points: next.points, name: next.name, phone: next.phone } : prev));
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [customer?.id]);
+
 
 
   async function lookupBy(raw: string) {
@@ -253,6 +270,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
   const qrRef = useRef<HTMLDivElement | null>(null);
+  const [redeemReward, setRedeemReward] = useState<Reward | null>(null);
 
   function downloadQR() {
     const svg = qrRef.current?.querySelector("svg");
@@ -489,20 +507,25 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                   {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}
                   <div className="mt-2 text-sm font-bold text-brand-navy">Cần {r.points_required} điểm</div>
                   {enough ? (
-                    <div className="mt-3 space-y-2">
-                      <div className="rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
-                        ✓ Đủ điểm đổi quà
-                      </div>
-                      {r.code && (
-                        <div className="rounded-xl border-2 border-dashed border-brand-red bg-brand-red/5 px-3 py-2 text-center">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mã đổi quà — đọc cho thu ngân</div>
-                          <div className="mt-0.5 font-mono text-base font-black text-brand-red">{r.code}</div>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRedeemReward(r)}
+                      className="mt-3 w-full rounded-xl bg-success px-3 py-2.5 text-center text-sm font-black uppercase tracking-wide text-success-foreground shadow-md transition hover:brightness-110 active:scale-[0.98]"
+                    >
+                      ✓ Đủ điểm — Đổi quà
+                    </button>
                   ) : (
-                    <div className="mt-3 rounded-xl bg-muted px-3 py-2 text-center text-sm font-semibold text-muted-foreground">
-                      Còn thiếu {r.points_required - customer.points} điểm
+                    <div className="mt-3 space-y-1">
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full cursor-not-allowed rounded-xl bg-muted px-3 py-2.5 text-center text-sm font-bold text-muted-foreground opacity-70"
+                      >
+                        Chưa đủ điểm
+                      </button>
+                      <p className="text-center text-xs font-semibold text-muted-foreground">
+                        Còn thiếu {r.points_required - customer.points} điểm
+                      </p>
                     </div>
                   )}
                 </div>
@@ -547,6 +570,79 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             </div>
           </li>
         </ul>
+      </div>
+
+      {redeemReward && (
+        <RedeemCodeModal reward={redeemReward} onClose={() => setRedeemReward(null)} />
+      )}
+    </div>
+  );
+}
+
+function RedeemCodeModal({ reward, onClose }: { reward: Reward; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md overflow-hidden rounded-3xl bg-card shadow-2xl"
+        style={{ boxShadow: "0 25px 80px -10px rgba(0,0,0,0.5)" }}
+      >
+        <div
+          className="px-6 py-5 text-center text-white"
+          style={{ background: "linear-gradient(135deg, var(--brand-navy), oklch(0.25 0.08 250))" }}
+        >
+          <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">
+            Yến sào Trí Sơn
+          </div>
+          <h3 className="mt-1 text-xl font-black uppercase tracking-wide">
+            Xác nhận đổi quà thành viên
+          </h3>
+        </div>
+
+        <div className="px-6 py-6 text-center">
+          <div className="text-sm font-semibold text-muted-foreground">{reward.name}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Trị giá: <span className="font-bold text-brand-red">{reward.points_required} điểm</span>
+          </div>
+
+          <div className="my-5 rounded-2xl border-2 border-dashed bg-gradient-to-br from-amber-50 to-yellow-50 px-4 py-5"
+            style={{ borderColor: "#bf953f" }}
+          >
+            <div className="text-[11px] font-bold uppercase tracking-wider text-brand-navy/70">
+              Mã sản phẩm / Mã đổi thưởng
+            </div>
+            <div
+              className="mt-2 break-all text-2xl leading-tight"
+              style={{
+                ...GOLD_METALLIC,
+                fontSize: "1.75rem",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {reward.code || "(Chưa có mã)"}
+            </div>
+          </div>
+
+          <p className="text-sm leading-relaxed text-foreground">
+            Vui lòng đưa màn hình mã này <span className="font-bold">hoặc đọc mã</span> cho{" "}
+            <span className="font-bold text-brand-red">Thu ngân tại quầy</span> để nhận quà chưng sẵn.
+          </p>
+          <p className="mt-2 text-xs italic text-muted-foreground">
+            Điểm sẽ được tự động trừ sau khi nhân viên xác nhận trên hệ thống.
+          </p>
+
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="outline"
+            className="mt-5 h-11 rounded-xl px-8 font-bold"
+          >
+            ĐÓNG
+          </Button>
+        </div>
       </div>
     </div>
   );

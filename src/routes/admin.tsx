@@ -1377,6 +1377,8 @@ function QuickAddPointsModal({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeemBusy, setRedeemBusy] = useState(false);
   const points = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
@@ -1401,6 +1403,52 @@ function QuickAddPointsModal({
     if (e2) { toast.error("Lỗi giao dịch: " + e2.message); return; }
     toast.success(`+${points} điểm cho ${customer.name}`);
     onSaved();
+  }
+
+  async function redeem(e: React.MouseEvent | React.KeyboardEvent | React.FormEvent) {
+    e.preventDefault();
+    const code = redeemCode.trim().toUpperCase();
+    if (!code) { toast.error("Vui lòng nhập Mã sản phẩm"); return; }
+    setRedeemBusy(true);
+    try {
+      const { data: reward, error: re } = await supabase
+        .from("rewards")
+        .select("id, name, code, points_required, active")
+        .ilike("code", code)
+        .maybeSingle();
+      if (re) throw re;
+      if (!reward) { toast.error(`Không tìm thấy quà với mã "${code}"`); setRedeemBusy(false); return; }
+      if (!(reward as any).active) { toast.error("Phần quà này đã ngừng hoạt động"); setRedeemBusy(false); return; }
+      const r = reward as { id: string; name: string; code: string; points_required: number };
+      if (customer.points < r.points_required) {
+        toast.error(`Khách thiếu ${r.points_required - customer.points} điểm để đổi "${r.name}"`);
+        setRedeemBusy(false);
+        return;
+      }
+      if (!confirm(`Xác nhận trừ ${r.points_required} điểm để đổi "${r.name}"?`)) {
+        setRedeemBusy(false); return;
+      }
+      const newPoints = customer.points - r.points_required;
+      const { error: u1 } = await supabase.from("customers").update({ points: newPoints }).eq("id", customer.id);
+      if (u1) throw u1;
+      const { error: u2 } = await supabase.from("transactions").insert({
+        customer_id: customer.id,
+        points_change: -r.points_required,
+        amount: null,
+        reason: `Đổi quà: ${r.name} (Mã ${r.code})`,
+        staff_name: staff,
+        type: "redeem",
+      });
+      if (u2) throw u2;
+      toast.success(`Đã đổi quà "${r.name}" • -${r.points_required} điểm`);
+      setRedeemCode("");
+      onSaved();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Lỗi đổi quà: " + msg);
+    } finally {
+      setRedeemBusy(false);
+    }
   }
 
   return (
@@ -1461,6 +1509,39 @@ function QuickAddPointsModal({
             <Plus className="mr-2 h-5 w-5" />
             {busy ? "Đang lưu..." : `Cộng +${points} điểm`}
           </Button>
+        </div>
+
+        {/* ===== ĐỔI QUÀ BẰNG MÃ SẢN PHẨM ===== */}
+        <div className="mt-6 rounded-2xl border-2 border-dashed border-success/40 bg-success/5 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Gift className="h-5 w-5 text-success" />
+            <Label className="text-sm font-black uppercase tracking-wide text-success">
+              Đổi quà bằng mã sản phẩm
+            </Label>
+          </div>
+          <Label className="text-xs font-bold text-brand-navy">
+            Nhập Mã Sản Phẩm Để Đổi Quà
+          </Label>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={redeemCode}
+              onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); redeem(e); } }}
+              placeholder="VD: TS-YEN-NHUY-HOA-70ML"
+              className="h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider"
+            />
+            <Button
+              type="button"
+              onClick={redeem}
+              disabled={redeemBusy || !redeemCode.trim()}
+              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110"
+            >
+              {redeemBusy ? "Đang xử lý..." : "XÁC NHẬN ĐỔI QUÀ"}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
+          </p>
         </div>
       </form>
     </div>
