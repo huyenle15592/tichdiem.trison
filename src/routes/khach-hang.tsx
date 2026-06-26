@@ -150,15 +150,16 @@ function CustomerView() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => { setCustomer(null); setSearched(false); setQuery(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onClick={() => { setCustomer(null); setRecentTx([]); setSearched(false); setQuery(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="text-sm font-semibold text-brand-navy hover:bg-brand-navy/10"
               >
                 ← Tra cứu khách khác
               </Button>
             </div>
-            <MemberCard customer={customer} rewards={rewards} />
+            <MemberCard customer={customer} rewards={rewards} recentTx={recentTx} />
           </div>
         )}
+
       </main>
     </div>
   );
