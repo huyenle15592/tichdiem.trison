@@ -81,6 +81,11 @@ function CustomerView() {
       }
       setCustomer(cust);
       setRewards((rws as Reward[]) ?? []);
+      if (cust) {
+        setTimeout(() => {
+          document.getElementById("member-card-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+      }
     } catch (err) {
       toast.error("Không thể tra cứu. Vui lòng thử lại.");
       console.error(err);
@@ -172,7 +177,21 @@ function CustomerView() {
           </div>
         )}
 
-        {customer && <MemberCard customer={customer} rewards={rewards} />}
+        {customer && (
+          <div id="member-card-anchor">
+            <div className="mt-2 flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => { setCustomer(null); setSearched(false); setQuery(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-sm font-semibold text-brand-navy hover:bg-brand-navy/10"
+              >
+                ← Tra cứu khách khác
+              </Button>
+            </div>
+            <MemberCard customer={customer} rewards={rewards} />
+          </div>
+        )}
       </main>
     </div>
   );
