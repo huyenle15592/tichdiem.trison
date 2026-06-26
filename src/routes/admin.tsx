@@ -648,6 +648,8 @@ function CustomersSection({ staff }: { staff: string }) {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
+  const [lastTx, setLastTx] = useState<Record<string, string | null>>({});
+  const [inactivity, setInactivity] = useState<"all" | "90" | "180" | "365">("all");
 
 
   async function load() {
@@ -656,7 +658,19 @@ function CustomersSection({ staff }: { staff: string }) {
     setItems(list);
     const map = await fetchActivationDates(list.map((c) => c.id));
     setActivations(map);
+    // Last transaction date per customer (only positive earning or redeem activity)
+    const { data: txs } = await supabase
+      .from("transactions")
+      .select("customer_id, created_at, type")
+      .in("type", ["add", "redeem"])
+      .order("created_at", { ascending: false });
+    const lt: Record<string, string | null> = {};
+    for (const t of (txs as { customer_id: string; created_at: string }[]) ?? []) {
+      if (!lt[t.customer_id]) lt[t.customer_id] = t.created_at;
+    }
+    setLastTx(lt);
   }
+
   useEffect(() => { load(); }, []);
 
   async function add(e: React.FormEvent) {
@@ -677,7 +691,37 @@ function CustomersSection({ staff }: { staff: string }) {
 
 
 
-  const filtered = items.filter((c) => c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()));
+  const now = Date.now();
+  const minDays = inactivity === "all" ? 0 : Number(inactivity);
+  const matchesSearch = (c: Customer) =>
+    c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase());
+  const filtered = items.filter(matchesSearch);
+  const inactiveList = items
+    .filter(matchesSearch)
+    .map((c) => {
+      const last = lastTx[c.id] ?? null;
+      const days = last ? Math.floor((now - new Date(last).getTime()) / 86400000) : null;
+      return { c, last, days };
+    })
+    .filter(({ days }) => days !== null && days > minDays)
+    .sort((a, b) => (b.days ?? 0) - (a.days ?? 0));
+
+  async function copyPhone(p: string) {
+    try {
+      await navigator.clipboard.writeText(p);
+      toast.success(`Đã copy SĐT: ${p}`);
+    } catch {
+      toast.error("Không thể copy");
+    }
+  }
+
+  function formatDate(iso: string | null) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+
+
 
   return (
     <div className="space-y-5">
@@ -708,61 +752,151 @@ function CustomersSection({ staff }: { staff: string }) {
 
 
       <div className="rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
-        <div className="border-b p-4">
+        <div className="border-b p-4 space-y-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm theo tên hoặc SĐT..." className="h-11 rounded-xl border-2 pl-10" />
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-xs font-bold text-muted-foreground">
+              ⏰ Bộ lọc khách hàng lâu chưa quay lại:
+            </Label>
+            <select
+              value={inactivity}
+              onChange={(e) => setInactivity(e.target.value as "all" | "90" | "180" | "365")}
+              className="h-10 rounded-xl border-2 border-input bg-background px-3 text-sm font-bold text-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy"
+            >
+              <option value="all">Tất cả khách hàng</option>
+              <option value="90">Hơn 3 tháng chưa mua hàng (&gt; 90 ngày)</option>
+              <option value="180">Hơn 6 tháng chưa mua hàng (&gt; 180 ngày)</option>
+              <option value="365">Hơn 1 năm chưa mua hàng (&gt; 365 ngày)</option>
+            </select>
+            {inactivity !== "all" && (
+              <span className="rounded-full bg-brand-red/10 px-3 py-1 text-xs font-black text-brand-red">
+                {inactiveList.length} khách hàng
+              </span>
+            )}
+          </div>
         </div>
-        <ul className="divide-y">
-          {filtered.map((c) => {
-            const tier = getTier(c.points, thresholds);
-            return (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold">{c.name}</div>
-                  <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
-                  {c.birth_date && (
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      🎂 {formatBirth(c.birth_date)}
-                    </div>
-                  )}
-                  {(() => {
-                    const w = cardWindow(activations[c.id]);
-                    return (
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {w.activated ? (
-                          <>Thẻ: {w.memberSince} → <span className="font-semibold text-brand-navy">{w.validThrough}</span></>
-                        ) : (
-                          <span className="italic">Thẻ: Chưa kích hoạt</span>
-                        )}
+
+        {inactivity === "all" ? (
+          <ul className="divide-y">
+            {filtered.map((c) => {
+              const tier = getTier(c.points, thresholds);
+              return (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold">{c.name}</div>
+                    <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
+                    {c.birth_date && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        🎂 {formatBirth(c.birth_date)}
                       </div>
-                    );
-                  })()}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${tierPillClass(tier.key)}`}>
-                    {tier.name}
-                  </span>
-                  <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
-                  <Button
-                    onClick={() => setQuickAdd(c)}
-                    size="sm"
-                    className="h-10 rounded-xl bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90 shadow-[var(--shadow-soft)]"
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> Cộng điểm
-                  </Button>
-                  <Button onClick={() => setEditing(c)} size="sm" variant="ghost" className="text-brand-navy">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-              </li>
-            );
-          })}
-          {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
-        </ul>
+                    )}
+                    {(() => {
+                      const w = cardWindow(activations[c.id]);
+                      return (
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          {w.activated ? (
+                            <>Thẻ: {w.memberSince} → <span className="font-semibold text-brand-navy">{w.validThrough}</span></>
+                          ) : (
+                            <span className="italic">Thẻ: Chưa kích hoạt</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${tierPillClass(tier.key)}`}>
+                      {tier.name}
+                    </span>
+                    <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
+                    <Button
+                      onClick={() => setQuickAdd(c)}
+                      size="sm"
+                      className="h-10 rounded-xl bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90 shadow-[var(--shadow-soft)]"
+                    >
+                      <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                    </Button>
+                    <Button onClick={() => setEditing(c)} size="sm" variant="ghost" className="text-brand-navy">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+            {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
+          </ul>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-[Montserrat]">
+              <thead className="bg-brand-navy/5 text-xs font-black uppercase tracking-wider text-brand-navy">
+                <tr>
+                  <th className="px-4 py-3">Họ và Tên</th>
+                  <th className="px-4 py-3">Số điện thoại</th>
+                  <th className="px-4 py-3">Hạng hiện tại</th>
+                  <th className="px-4 py-3">Ngày mua cuối</th>
+                  <th className="px-4 py-3">Số ngày bỏ quên</th>
+                  <th className="px-4 py-3 text-right">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y text-sm">
+                {inactiveList.map(({ c, last, days }) => {
+                  const tier = getTier(c.points, thresholds);
+                  return (
+                    <tr key={c.id} className="hover:bg-brand-navy/5">
+                      <td className="px-4 py-3 font-bold text-foreground">{c.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono">{c.phone}</span>
+                          <Button
+                            onClick={() => copyPhone(c.phone)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 rounded-md px-2 text-brand-navy hover:bg-brand-navy/10"
+                            title="Copy SĐT để gửi Zalo"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>
+                          {tier.name}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold">{formatDate(last)}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-brand-red/10 px-2.5 py-1 text-xs font-black text-brand-red">
+                          {days} ngày chưa mua
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          onClick={() => setQuickAdd(c)}
+                          size="sm"
+                          className="h-9 rounded-lg bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90"
+                        >
+                          <Plus className="mr-1 h-3.5 w-3.5" /> Cộng điểm
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {inactiveList.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
+                      Không có khách hàng nào quá hạn theo bộ lọc này. 🎉
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
       </div>
+
 
       {editing && (
         <EditCustomerModal
