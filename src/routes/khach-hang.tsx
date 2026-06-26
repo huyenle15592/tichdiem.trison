@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { getTier, formatVnd, normalizePhone, formatVnDate, addOneYearIso } from "@/lib/loyalty";
+import { getTier, formatVnd, normalizePhone, cardWindow } from "@/lib/loyalty";
 import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
