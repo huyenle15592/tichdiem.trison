@@ -585,6 +585,7 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
   const [names, setNames] = useState<Record<string, { name: string; phone: string }>>({});
   const [voiding, setVoiding] = useState<string | null>(null);
   const [pwTarget, setPwTarget] = useState<Transaction | null>(null);
+  const [pwAction, setPwAction] = useState<"void" | "delete">("void");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
@@ -603,6 +604,15 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
 
   function requestVoid(t: Transaction) {
     setPwTarget(t);
+    setPwAction("void");
+    setPw("");
+    setShowPw(false);
+    setPwError(null);
+  }
+
+  function requestDelete(t: Transaction) {
+    setPwTarget(t);
+    setPwAction("delete");
     setPw("");
     setShowPw(false);
     setPwError(null);
@@ -616,26 +626,42 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
     setPwError(null);
   }
 
-  async function confirmVoid() {
+  async function confirmAction() {
     if (!pwTarget) return;
-    if (pw !== MANAGER_PASSWORD) {
-      setPwError("Sai mật khẩu! Chỉ có Quản lý cấp cao mới có quyền xóa hoạt động giao dịch.");
+    const isDelete = pwAction === "delete";
+    const expected = isDelete ? "TrisonAdmin2026" : MANAGER_PASSWORD;
+    if (pw !== expected) {
+      setPwError(isDelete
+        ? "Sai mật khẩu Quản lý! Hành động xóa bị từ chối."
+        : "Sai mật khẩu! Chỉ có Quản lý cấp cao mới có quyền xóa hoạt động giao dịch.");
       return;
     }
     const t = pwTarget;
     setVoiding(t.id);
     const { data: cust } = await supabase.from("customers").select("points").eq("id", t.customer_id).maybeSingle();
     if (!cust) { toast.error("Không tìm thấy khách"); setVoiding(null); setPwTarget(null); return; }
-    const reverted = (cust as any).points - t.points_change;
+    // Only reverse points if transaction wasn't already voided (voided already reversed points).
+    const alreadyVoided = t.type === "void";
+    const reverted = alreadyVoided ? (cust as any).points : (cust as any).points - t.points_change;
     if (reverted < 0) { toast.error("Không thể hoàn: điểm khách đã không còn đủ"); setVoiding(null); setPwTarget(null); return; }
-    const { error: e1 } = await supabase.from("customers").update({ points: reverted }).eq("id", t.customer_id);
-    if (e1) { toast.error(e1.message); setVoiding(null); setPwTarget(null); return; }
-    const { error: e2 } = await supabase
-      .from("transactions")
-      .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || ""), created_at: new Date().toISOString() } as any)
-      .eq("id", t.id);
-    if (e2) { toast.error(e2.message); setVoiding(null); setPwTarget(null); return; }
-    toast.success(`Đã hoàn ${Math.abs(t.points_change)} điểm`);
+
+    if (!alreadyVoided) {
+      const { error: eu } = await supabase.from("customers").update({ points: reverted }).eq("id", t.customer_id);
+      if (eu) { toast.error(eu.message); setVoiding(null); setPwTarget(null); return; }
+    }
+
+    if (isDelete) {
+      const { error: ed } = await supabase.from("transactions").delete().eq("id", t.id);
+      if (ed) { toast.error(ed.message); setVoiding(null); setPwTarget(null); return; }
+      toast.success("Đã xóa vĩnh viễn giao dịch");
+    } else {
+      const { error: e2 } = await supabase
+        .from("transactions")
+        .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || ""), created_at: new Date().toISOString() } as any)
+        .eq("id", t.id);
+      if (e2) { toast.error(e2.message); setVoiding(null); setPwTarget(null); return; }
+      toast.success(`Đã hoàn ${Math.abs(t.points_change)} điểm`);
+    }
     setVoiding(null);
     setPwTarget(null);
     setPw("");
@@ -656,6 +682,7 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
           const positive = t.points_change > 0;
           const voided = t.type === "void";
           const canVoid = allowVoid && !voided && t.type !== "adjust";
+          const canDelete = allowVoid;
           return (
             <li key={t.id} className={`flex items-center justify-between gap-3 p-4 ${voided ? "bg-muted/40" : ""}`}>
               <div className="flex items-center gap-3 min-w-0">
@@ -693,6 +720,18 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
                     {voiding === t.id ? "..." : "Hủy"}
                   </Button>
                 )}
+                {canDelete && (
+                  <Button
+                    onClick={() => requestDelete(t)}
+                    disabled={voiding === t.id}
+                    size="sm"
+                    variant="ghost"
+                    title="Xóa vĩnh viễn giao dịch"
+                    className="h-9 rounded-lg border border-red-500/40 bg-red-500/5 px-2 text-xs font-black text-red-600 hover:bg-red-600 hover:text-white"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
             </li>
           );
@@ -705,10 +744,14 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
         <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
           <div className="mb-3 flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-brand-red" />
-            <h3 className="text-lg font-black text-brand-navy">Xác thực cấp Quản lý</h3>
+            <h3 className="text-lg font-black text-brand-navy">
+              {pwAction === "delete" ? "⚠️ CẢNH BÁO CẤP CAO" : "Xác thực cấp Quản lý"}
+            </h3>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
-            Vui lòng nhập mật khẩu Admin để hủy/xóa hoạt động giao dịch này.
+            {pwAction === "delete"
+              ? "Bạn đang thực hiện xóa vĩnh viễn hoạt động giao dịch này khỏi hệ thống. Vui lòng nhập mật khẩu Quản lý để xác nhận."
+              : "Vui lòng nhập mật khẩu Admin để hủy/xóa hoạt động giao dịch này."}
           </p>
           <Label className="text-sm font-bold text-brand-navy">Mật khẩu Quản lý</Label>
           <div className="relative mt-2">
@@ -717,7 +760,7 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
               value={pw}
               autoFocus
               onChange={(e) => { setPw(e.target.value); setPwError(null); }}
-              onKeyDown={(e) => { if (e.key === "Enter") confirmVoid(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmAction(); }}
               placeholder="Nhập mật khẩu Admin..."
               className="h-12 rounded-xl border-2 pr-12 text-base font-bold"
             />
@@ -737,11 +780,11 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="ghost" onClick={closePwModal} disabled={voiding !== null}>Hủy</Button>
             <Button
-              onClick={confirmVoid}
+              onClick={confirmAction}
               disabled={voiding !== null || !pw}
               className="h-11 rounded-xl bg-brand-red px-5 font-black text-brand-red-foreground hover:bg-brand-red/90"
             >
-              {voiding ? "Đang xử lý..." : "Xác nhận hủy giao dịch"}
+              {voiding ? "Đang xử lý..." : pwAction === "delete" ? "Xác nhận xóa vĩnh viễn" : "Xác nhận hủy giao dịch"}
             </Button>
           </div>
         </div>
