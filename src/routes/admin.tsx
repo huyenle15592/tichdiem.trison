@@ -847,11 +847,11 @@ function RewardsSection() {
       image_url: imageUrl || null,
     };
     if (editingId) {
-      const { error } = await supabase.from("rewards").update(payload).eq("id", editingId);
+      const { error } = await supabase.from("rewards").update(payload as never).eq("id", editingId);
       if (error) { toast.error(error.message); return; }
       toast.success("Đã cập nhật quà tặng");
     } else {
-      const { error } = await supabase.from("rewards").insert({ ...payload, active: true });
+      const { error } = await supabase.from("rewards").insert({ ...payload, active: true } as never);
       if (error) { toast.error(error.message); return; }
       toast.success("Đã thêm quà tặng");
     }
