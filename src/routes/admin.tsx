@@ -1000,6 +1000,12 @@ function EditCustomerModal({
   const [busy, setBusy] = useState(false);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
 
+  // Manager-only direct points edit
+  const [mgrOpen, setMgrOpen] = useState(false);
+  const [mgrUnlocked, setMgrUnlocked] = useState(false);
+  const [mgrPwd, setMgrPwd] = useState("");
+  const [directPoints, setDirectPoints] = useState(String(customer.points));
+
   const addPoints = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
@@ -1013,24 +1019,39 @@ function EditCustomerModal({
 
   const win = cardWindow(activatedAt);
 
+  function tryUnlock() {
+    if (mgrPwd === MANAGER_PASSWORD) {
+      setMgrUnlocked(true);
+      toast.success("Đã mở khóa quyền Quản lý");
+    } else {
+      toast.error("Sai mật khẩu Quản lý");
+    }
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const p = normalizePhone(phone);
     if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
     setBusy(true);
-    const newPoints = customer.points + addPoints;
+
+    // Compute final points: start from current, apply add, then manager override (if unlocked & changed)
+    let finalPoints = customer.points + addPoints;
+    const directVal = Number(directPoints);
+    const directChanged = mgrUnlocked && Number.isFinite(directVal) && directVal >= 0 && directVal !== customer.points;
+    if (directChanged) finalPoints = directVal;
+
     const { error } = await supabase
       .from("customers")
       .update({
         name: name.trim(),
         phone: p,
         birth_date: birth || null,
-        points: newPoints,
+        points: finalPoints,
       })
       .eq("id", customer.id);
     if (error) { setBusy(false); toast.error(error.message); return; }
 
-    if (addPoints > 0) {
+    if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
       const { error: e2 } = await supabase.from("transactions").insert({
         customer_id: customer.id,
@@ -1043,10 +1064,30 @@ function EditCustomerModal({
       if (e2) { setBusy(false); toast.error(e2.message); return; }
     }
 
+    if (directChanged) {
+      const delta = directVal - customer.points;
+      const { error: e3 } = await supabase.from("transactions").insert({
+        customer_id: customer.id,
+        points_change: delta,
+        amount: null,
+        reason: `[ĐIỀU CHỈNH BỞI QUẢN LÝ] ${customer.points} → ${directVal} điểm` + (reason.trim() ? ` • ${reason.trim()}` : ""),
+        staff_name: staff,
+        type: "adjust",
+      });
+      if (e3) { setBusy(false); toast.error(e3.message); return; }
+    }
+
     setBusy(false);
-    toast.success(addPoints > 0 ? `Đã cập nhật & cộng +${addPoints} điểm` : "Đã cập nhật khách hàng");
+    toast.success(
+      directChanged
+        ? `Đã điều chỉnh trực tiếp về ${directVal} điểm`
+        : addPoints > 0
+        ? `Đã cập nhật & cộng +${addPoints} điểm`
+        : "Đã cập nhật khách hàng",
+    );
     onSaved();
   }
+
 
   async function remove() {
     if (!confirm(`Xoá khách hàng ${customer.name}? Lịch sử giao dịch liên quan sẽ vẫn còn.`)) return;
