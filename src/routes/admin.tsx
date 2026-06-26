@@ -306,6 +306,8 @@ function Dashboard({ staff }: { staff: string }) {
   const [searching, setSearching] = useState(false);
   const [todayTx, setTodayTx] = useState<Transaction[]>([]);
   const [counts, setCounts] = useState({ customers: 0, txToday: 0 });
+  const [scanOpen, setScanOpen] = useState(false);
+  const [quickCustomer, setQuickCustomer] = useState<Customer | null>(null);
 
   async function loadStats() {
     const since = new Date(); since.setHours(0, 0, 0, 0);
@@ -326,15 +328,34 @@ function Dashboard({ staff }: { staff: string }) {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  async function lookupByPhone(p: string): Promise<Customer | null> {
+    const { data } = await supabase.from("customers").select("*").eq("phone", p).maybeSingle();
+    return (data as Customer) ?? null;
+  }
+
   async function findCustomer(e?: React.FormEvent) {
     e?.preventDefault();
     const p = normalizePhone(phone);
     if (!p) return;
     setSearching(true);
-    const { data } = await supabase.from("customers").select("*").eq("phone", p).maybeSingle();
-    setCustomer((data as Customer) ?? null);
-    if (!data) toast.error("Không tìm thấy khách hàng với SĐT này");
+    const c = await lookupByPhone(p);
+    setCustomer(c);
+    if (!c) toast.error("Không tìm thấy khách hàng với SĐT này");
     setSearching(false);
+  }
+
+  async function handleScan(text: string) {
+    setScanOpen(false);
+    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
+    const p = normalizePhone(cleaned);
+    if (!p) { toast.error("Mã QR không hợp lệ"); return; }
+    setPhone(p);
+    setSearching(true);
+    const c = await lookupByPhone(p);
+    setSearching(false);
+    if (!c) { toast.error("Không tìm thấy khách hàng với SĐT " + p); return; }
+    setCustomer(c);
+    setQuickCustomer(c);
   }
 
   return (
@@ -363,6 +384,13 @@ function Dashboard({ staff }: { staff: string }) {
           <Button type="submit" disabled={searching} className="h-12 rounded-xl bg-brand-navy px-6 font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
             Tra cứu
           </Button>
+          <Button
+            type="button"
+            onClick={() => setScanOpen(true)}
+            className="h-12 rounded-xl bg-brand-red px-5 font-bold text-brand-red-foreground hover:bg-brand-red/90"
+          >
+            <Camera className="mr-2 h-4 w-4" /> Quét mã QR của khách
+          </Button>
         </div>
       </form>
 
@@ -372,9 +400,25 @@ function Dashboard({ staff }: { staff: string }) {
         <h2 className="mb-3 text-lg font-black text-brand-navy">Giao dịch hôm nay (Real-time)</h2>
         <TransactionList items={todayTx} allowVoid onVoided={loadStats} />
       </div>
+
+      <QrScannerModal open={scanOpen} onClose={() => setScanOpen(false)} onResult={handleScan} />
+      {quickCustomer && (
+        <QuickAddPointsModal
+          customer={quickCustomer}
+          staff={staff}
+          onClose={() => setQuickCustomer(null)}
+          onSaved={async () => {
+            const refreshed = await lookupByPhone(quickCustomer.phone);
+            if (refreshed) setCustomer(refreshed);
+            setQuickCustomer(null);
+            loadStats();
+          }}
+        />
+      )}
     </div>
   );
 }
+
 
 function StatCard({ label, value, color, small }: { label: string; value: number | string; color: "navy" | "red" | "gold"; small?: boolean }) {
   const styles = {
