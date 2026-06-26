@@ -38,6 +38,20 @@ function CustomerView() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
 
+  // Realtime: làm mới danh sách quà khi admin chỉnh sửa
+  useEffect(() => {
+    if (!customer) return;
+    const channel = supabase
+      .channel("rewards-customer")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rewards" }, async () => {
+        const { data } = await supabase.from("rewards").select("*").eq("active", true).order("points_required");
+        setRewards((data as Reward[]) ?? []);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [customer]);
+
+
 
   async function lookupBy(raw: string) {
     const q = raw.trim();
