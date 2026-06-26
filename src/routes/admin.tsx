@@ -584,6 +584,10 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
 function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[]; allowVoid?: boolean; onVoided?: () => void }) {
   const [names, setNames] = useState<Record<string, { name: string; phone: string }>>({});
   const [voiding, setVoiding] = useState<string | null>(null);
+  const [pwTarget, setPwTarget] = useState<Transaction | null>(null);
+  const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
 
   useEffect(() => {
     const ids = Array.from(new Set(items.map((i) => i.customer_id))).filter((id) => !names[id]);
@@ -597,23 +601,44 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
     });
   }, [items]);
 
-  async function voidTx(t: Transaction) {
-    if (!confirm("Bạn có chắc chắn muốn hủy giao dịch nhập sai này không?\nĐiểm của khách sẽ được hoàn trả về trạng thái cũ.")) return;
+  function requestVoid(t: Transaction) {
+    setPwTarget(t);
+    setPw("");
+    setShowPw(false);
+    setPwError(null);
+  }
+
+  function closePwModal() {
+    if (voiding) return;
+    setPwTarget(null);
+    setPw("");
+    setShowPw(false);
+    setPwError(null);
+  }
+
+  async function confirmVoid() {
+    if (!pwTarget) return;
+    if (pw !== MANAGER_PASSWORD) {
+      setPwError("Sai mật khẩu! Chỉ có Quản lý cấp cao mới có quyền xóa hoạt động giao dịch.");
+      return;
+    }
+    const t = pwTarget;
     setVoiding(t.id);
-    // Refresh customer to get latest points
     const { data: cust } = await supabase.from("customers").select("points").eq("id", t.customer_id).maybeSingle();
-    if (!cust) { toast.error("Không tìm thấy khách"); setVoiding(null); return; }
+    if (!cust) { toast.error("Không tìm thấy khách"); setVoiding(null); setPwTarget(null); return; }
     const reverted = (cust as any).points - t.points_change;
-    if (reverted < 0) { toast.error("Không thể hoàn: điểm khách đã không còn đủ"); setVoiding(null); return; }
+    if (reverted < 0) { toast.error("Không thể hoàn: điểm khách đã không còn đủ"); setVoiding(null); setPwTarget(null); return; }
     const { error: e1 } = await supabase.from("customers").update({ points: reverted }).eq("id", t.customer_id);
-    if (e1) { toast.error(e1.message); setVoiding(null); return; }
+    if (e1) { toast.error(e1.message); setVoiding(null); setPwTarget(null); return; }
     const { error: e2 } = await supabase
       .from("transactions")
-      .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || "") })
+      .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || ""), created_at: new Date().toISOString() } as any)
       .eq("id", t.id);
-    if (e2) { toast.error(e2.message); setVoiding(null); return; }
+    if (e2) { toast.error(e2.message); setVoiding(null); setPwTarget(null); return; }
     toast.success(`Đã hoàn ${Math.abs(t.points_change)} điểm`);
     setVoiding(null);
+    setPwTarget(null);
+    setPw("");
     onVoided?.();
   }
 
@@ -621,6 +646,7 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
     return <div className="rounded-2xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">Chưa có giao dịch nào.</div>;
 
   return (
+    <>
     <div className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
       <ul className="divide-y">
         {items.map((t) => {
@@ -656,7 +682,7 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
                 </div>
                 {canVoid && (
                   <Button
-                    onClick={() => voidTx(t)}
+                    onClick={() => requestVoid(t)}
                     disabled={voiding === t.id}
                     size="sm"
                     variant="ghost"
@@ -673,6 +699,55 @@ function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[];
         })}
       </ul>
     </div>
+
+    {pwTarget && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={closePwModal}>
+        <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="mb-3 flex items-center gap-2">
+            <ShieldAlert className="h-6 w-6 text-brand-red" />
+            <h3 className="text-lg font-black text-brand-navy">Xác thực cấp Quản lý</h3>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Vui lòng nhập mật khẩu Admin để hủy/xóa hoạt động giao dịch này.
+          </p>
+          <Label className="text-sm font-bold text-brand-navy">Mật khẩu Quản lý</Label>
+          <div className="relative mt-2">
+            <Input
+              type={showPw ? "text" : "password"}
+              value={pw}
+              autoFocus
+              onChange={(e) => { setPw(e.target.value); setPwError(null); }}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmVoid(); }}
+              placeholder="Nhập mật khẩu Admin..."
+              className="h-12 rounded-xl border-2 pr-12 text-base font-bold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+              aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            >
+              {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {pwError && (
+            <p className="mt-2 text-sm font-bold text-brand-red">{pwError}</p>
+          )}
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="ghost" onClick={closePwModal} disabled={voiding !== null}>Hủy</Button>
+            <Button
+              onClick={confirmVoid}
+              disabled={voiding !== null || !pw}
+              className="h-11 rounded-xl bg-brand-red px-5 font-black text-brand-red-foreground hover:bg-brand-red/90"
+            >
+              {voiding ? "Đang xử lý..." : "Xác nhận hủy giao dịch"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -2050,6 +2125,9 @@ function TierSettingsSection() {
   const [diamondMin, setDiamondMin] = useState<string>(String(DEFAULT_THRESHOLDS.diamondMin));
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [adminPw, setAdminPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -2068,10 +2146,16 @@ function TierSettingsSection() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    setPwError(null);
     const g = Number(goldMin);
     const d = Number(diamondMin);
     if (!Number.isFinite(g) || g < 1) { toast.error("Mốc Vàng phải là số dương"); return; }
     if (!Number.isFinite(d) || d <= g) { toast.error("Mốc Kim Cương phải lớn hơn mốc Vàng"); return; }
+    if (adminPw !== MANAGER_PASSWORD) {
+      setPwError("Mật khẩu Quản lý không chính xác. Bạn không có quyền thay đổi luật tích điểm!");
+      toast.error("Sai mật khẩu Quản lý");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase
       .from("tier_settings")
@@ -2079,6 +2163,8 @@ function TierSettingsSection() {
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Đã cập nhật luật chơi! Khách hàng sẽ thấy ngay theo thời gian thực.");
+    setAdminPw("");
+    setShowPw(false);
   }
 
   function resetDefaults() {
@@ -2162,6 +2248,41 @@ function TierSettingsSection() {
           <p className="mt-1 text-sm font-semibold text-white/90">
             Áp dụng: <span className="text-amber-300">từ {d} điểm trở lên</span>
           </p>
+        </div>
+
+        {/* Admin password gate */}
+        <div className="rounded-2xl border-2 border-brand-red/40 bg-brand-red/5 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-brand-red" />
+            <Label className="text-sm font-black uppercase tracking-wide text-brand-red">
+              Mật khẩu xác thực Quản lý (Admin Password)
+            </Label>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Chỉ Quản lý cấp cao mới được phép thay đổi luật tích điểm. Vui lòng nhập mật khẩu Admin để xác nhận.
+          </p>
+          <div className="relative">
+            <Input
+              type={showPw ? "text" : "password"}
+              value={adminPw}
+              onChange={(e) => { setAdminPw(e.target.value); setPwError(null); }}
+              placeholder="Nhập mật khẩu Quản lý..."
+              autoComplete="off"
+              className="h-12 rounded-xl border-2 pr-12 text-base font-bold"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+              aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            >
+              {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {pwError && (
+            <p className="mt-2 text-sm font-black text-brand-red">{pwError}</p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
