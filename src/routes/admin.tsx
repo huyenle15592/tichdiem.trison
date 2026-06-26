@@ -181,7 +181,7 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
 
 
 
-type Section = "dashboard" | "customers" | "history" | "rewards";
+type Section = "dashboard" | "customers" | "history" | "rewards" | "tiers";
 
 function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("dashboard");
@@ -194,7 +194,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { id: "customers", label: "Danh sách khách hàng", icon: Users },
     { id: "history", label: "Lịch sử giao dịch", icon: History },
     { id: "rewards", label: "Cài đặt quà tặng", icon: Gift },
+    { id: "tiers", label: "Cài đặt hạng & Tích điểm", icon: Crown },
   ];
+
 
   return (
     <div className="relative flex min-h-screen bg-transparent">
