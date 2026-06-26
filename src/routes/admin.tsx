@@ -564,26 +564,8 @@ function CustomersSection({ staff }: { staff: string }) {
     setNewName(""); setNewPhone(""); setNewBirth(""); load();
   }
 
-  async function onExcel(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    const rows = text.split(/\r?\n/).map((r) => r.split(",").map((c) => c.trim())).filter((r) => r.length >= 2 && r[0] && r[1]);
-    const recs = rows
-      .map(([name, phone, points, birth]) => ({
-        name,
-        phone: normalizePhone(phone),
-        points: Number(points) || 0,
-        birth_date: birth && /^\d{4}-\d{2}-\d{2}$/.test(birth) ? birth : null,
-      }))
-      .filter((r) => r.phone.length >= 8);
-    if (recs.length === 0) { toast.error("File trống hoặc sai định dạng (cần: tên,SĐT,điểm,ngày sinh)"); return; }
-    const { error } = await supabase.from("customers").upsert(recs, { onConflict: "phone" });
-    if (error) toast.error(error.message);
-    else toast.success(`Đã nhập ${recs.length} khách hàng`);
-    load();
-    e.target.value = "";
-  }
+
+
 
   const filtered = items.filter((c) => c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()));
 
@@ -612,14 +594,8 @@ function CustomersSection({ staff }: { staff: string }) {
             <Button type="submit" className="h-12 w-full rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm khách hàng</Button>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-brand-navy/30 px-4 text-sm font-bold text-brand-navy hover:bg-accent">
-            <Upload className="h-4 w-4" /> Tải lên file Excel/CSV khách cũ
-            <input type="file" accept=".csv,.txt" className="hidden" onChange={onExcel} />
-          </label>
-          <p className="text-xs text-muted-foreground">Định dạng CSV: <code>tên,SĐT,điểm,ngày sinh (YYYY-MM-DD)</code></p>
-        </div>
       </form>
+
 
       <div className="rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
         <div className="border-b p-4">
@@ -681,10 +657,12 @@ function CustomersSection({ staff }: { staff: string }) {
       {editing && (
         <EditCustomerModal
           customer={editing}
+          staff={staff}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+
       {quickAdd && (
         <QuickAddPointsModal
           customer={quickAdd}
@@ -956,19 +934,27 @@ function BirthdaysThisMonth() {
 
 function EditCustomerModal({
   customer,
+  staff,
   onClose,
   onSaved,
 }: {
   customer: Customer;
+  staff: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [name, setName] = useState(customer.name);
   const [phone, setPhone] = useState(customer.phone);
   const [birth, setBirth] = useState(customer.birth_date ?? "");
-  const [points, setPoints] = useState(String(customer.points));
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
+
+  const addPoints = useMemo(
+    () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
+    [amount],
+  );
 
   useEffect(() => {
     let alive = true;
@@ -983,18 +969,33 @@ function EditCustomerModal({
     const p = normalizePhone(phone);
     if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
     setBusy(true);
+    const newPoints = customer.points + addPoints;
     const { error } = await supabase
       .from("customers")
       .update({
         name: name.trim(),
         phone: p,
         birth_date: birth || null,
-        points: Number(points) || 0,
+        points: newPoints,
       })
       .eq("id", customer.id);
+    if (error) { setBusy(false); toast.error(error.message); return; }
+
+    if (addPoints > 0) {
+      const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
+      const { error: e2 } = await supabase.from("transactions").insert({
+        customer_id: customer.id,
+        points_change: addPoints,
+        amount: amountNum,
+        reason: reason.trim() || null,
+        staff_name: staff,
+        type: "add",
+      });
+      if (e2) { setBusy(false); toast.error(e2.message); return; }
+    }
+
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Đã cập nhật khách hàng");
+    toast.success(addPoints > 0 ? `Đã cập nhật & cộng +${addPoints} điểm` : "Đã cập nhật khách hàng");
     onSaved();
   }
 
@@ -1011,17 +1012,21 @@ function EditCustomerModal({
       <form
         onSubmit={save}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-card p-6 shadow-[var(--shadow-card)]"
+        className="w-full max-w-md rounded-2xl bg-card p-6 shadow-[var(--shadow-card)] max-h-[90vh] overflow-y-auto"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-black text-brand-navy">Chỉnh sửa khách hàng</h3>
+          <h3 className="text-xl font-black text-brand-navy">Chỉnh sửa & Cộng điểm</h3>
           <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-accent" aria-label="Đóng">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="mb-3 rounded-xl border bg-muted/40 p-3 text-xs">
-          <div className="font-bold text-brand-navy">Hạn sử dụng thẻ</div>
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-brand-navy">Điểm hiện tại</span>
+            <span className="text-lg font-black text-brand-navy">{customer.points} đ</span>
+          </div>
+          <div className="mt-2 font-bold text-brand-navy">Hạn sử dụng thẻ</div>
           {win.activated ? (
             <div className="mt-1 flex flex-wrap gap-x-4 text-muted-foreground">
               <span>Member Since: <span className="font-semibold text-foreground">{win.memberSince}</span></span>
@@ -1031,7 +1036,6 @@ function EditCustomerModal({
             <div className="mt-1 italic text-muted-foreground">Chưa kích hoạt — kích hoạt sau lần tích điểm đầu tiên.</div>
           )}
         </div>
-
 
         <div className="space-y-3">
           <div>
@@ -1046,14 +1050,34 @@ function EditCustomerModal({
             <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
             <Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
           </div>
-          <div>
-            <Label className="text-xs font-bold text-muted-foreground">Số điểm hiện tại</Label>
+
+          <div className="rounded-xl border-2 border-brand-red/30 bg-brand-red/5 p-3">
+            <Label className="text-sm font-black text-brand-red">Số tiền hóa đơn mua hàng (VNĐ)</Label>
             <Input
               inputMode="numeric"
-              value={points}
-              onChange={(e) => setPoints(e.target.value.replace(/[^0-9]/g, ""))}
-              className="mt-1 h-12 rounded-xl border-2"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="Ví dụ: 500000"
+              className="mt-1 h-12 rounded-xl border-2 text-lg font-bold"
             />
+            <div className="mt-2 text-sm font-bold text-brand-navy">
+              Số điểm sẽ được cộng thêm: <span className="text-brand-red">+{addPoints} điểm</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground">Quy đổi: 100.000đ = 1 điểm</div>
+            <div className="mt-3">
+              <Label className="text-xs font-bold text-muted-foreground">Lý do / Ghi chú giao dịch</Label>
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="VD: Khách mua 1 hộp yến tinh chế"
+                className="mt-1 h-11 rounded-xl border-2"
+              />
+            </div>
+            {addPoints > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                Tổng điểm sau khi lưu: <span className="font-black text-brand-navy">{customer.points + addPoints} điểm</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1069,6 +1093,7 @@ function EditCustomerModal({
     </div>
   );
 }
+
 
 // ============================================================
 // Quick add points modal (red button in customer list)
