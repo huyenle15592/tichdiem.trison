@@ -8,15 +8,25 @@ export type Tier = {
   next: number | null;
 };
 
-export function getTier(points: number): Tier {
-  if (points >= 200) {
-    return { key: "diamond", name: "Kim Cương", enName: "DIAMOND", min: 200, next: null };
+export type TierThresholds = {
+  goldMin: number;
+  diamondMin: number;
+};
+
+export const DEFAULT_THRESHOLDS: TierThresholds = { goldMin: 50, diamondMin: 200 };
+
+export function getTier(points: number, thresholds: TierThresholds = DEFAULT_THRESHOLDS): Tier {
+  const goldMin = Math.max(1, thresholds.goldMin);
+  const diamondMin = Math.max(goldMin + 1, thresholds.diamondMin);
+  if (points >= diamondMin) {
+    return { key: "diamond", name: "Kim Cương", enName: "DIAMOND", min: diamondMin, next: null };
   }
-  if (points >= 50) {
-    return { key: "gold", name: "Vàng", enName: "GOLD", min: 50, next: 200 };
+  if (points >= goldMin) {
+    return { key: "gold", name: "Vàng", enName: "GOLD", min: goldMin, next: diamondMin };
   }
-  return { key: "silver", name: "Bạc", enName: "SILVER", min: 0, next: 50 };
+  return { key: "silver", name: "Bạc", enName: "SILVER", min: 0, next: goldMin };
 }
+
 
 export const formatVnd = (n: number) =>
   new Intl.NumberFormat("vi-VN").format(n) + "đ";
