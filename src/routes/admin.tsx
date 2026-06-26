@@ -58,6 +58,12 @@ type Transaction = {
 const SHARED_PASSWORD = "Trison2026";
 const AUTH_KEY = "trison_admin_authed";
 
+function tierPillClass(key: "silver" | "gold" | "diamond"): string {
+  if (key === "diamond") return "bg-neutral-900 text-white";
+  if (key === "gold") return "bg-gradient-to-br from-amber-300 to-amber-600 text-amber-950";
+  return "bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900";
+}
+
 function AdminView() {
   const [authed, setAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
