@@ -1252,11 +1252,28 @@ const VN_MONTHS = [
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
 
-function formatBirth(iso: string): string {
-  // iso = "YYYY-MM-DD"
-  const [y, m, d] = iso.split("-");
-  if (!y || !m || !d) return iso;
-  return `${d}/${m}/${y}`;
+function parseBirthPart(s: string, max: number): number | null {
+  const t = s.trim();
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 1 || n > max) return null;
+  return Math.floor(n);
+}
+
+function customerBirth(c: { birth_day: number | null; birth_month: number | null; birth_date: string | null }): { day: number; month: number } | null {
+  if (c.birth_day && c.birth_month) return { day: c.birth_day, month: c.birth_month };
+  if (c.birth_date) {
+    const [, m, d] = c.birth_date.split("-");
+    const dd = Number(d), mm = Number(m);
+    if (dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12) return { day: dd, month: mm };
+  }
+  return null;
+}
+
+function formatBirth(c: { birth_day: number | null; birth_month: number | null; birth_date: string | null }): string {
+  const b = customerBirth(c);
+  if (!b) return "";
+  return `${String(b.day).padStart(2, "0")}/${String(b.month).padStart(2, "0")}`;
 }
 
 function BirthdaysThisMonth() {
@@ -1268,22 +1285,13 @@ function BirthdaysThisMonth() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data } = await supabase
-        .from("customers")
-        .select("*")
-        .not("birth_date", "is", null);
+      const { data } = await supabase.from("customers").select("*");
       if (!mounted) return;
       const list = ((data as Customer[]) ?? [])
-        .filter((c) => {
-          if (!c.birth_date) return false;
-          const month = Number(c.birth_date.split("-")[1]);
-          return month === currentMonth;
-        })
-        .sort((a, b) => {
-          const da = Number(a.birth_date!.split("-")[2]);
-          const db = Number(b.birth_date!.split("-")[2]);
-          return da - db;
-        });
+        .map((c) => ({ c, b: customerBirth(c) }))
+        .filter(({ b }) => b !== null && b.month === currentMonth)
+        .sort((a, b) => (a.b!.day - b.b!.day))
+        .map(({ c }) => c);
       setItems(list);
       setLoading(false);
     })();
