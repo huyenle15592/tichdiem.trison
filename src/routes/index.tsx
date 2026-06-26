@@ -28,7 +28,7 @@ function PortalView() {
           className="mx-auto h-40 w-auto md:h-56"
           style={{ mixBlendMode: "multiply" }}
         />
-        <h1 className="mt-12 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-16 md:text-6xl">
+        <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-4 md:text-6xl">
           YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
