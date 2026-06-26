@@ -36,7 +36,7 @@ function PortalView() {
         </p>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-5 py-10 md:grid-cols-2 md:gap-8 md:py-16">
+      <main className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:gap-6 sm:px-5 sm:py-10 md:grid-cols-2 md:gap-8 md:py-16">
         <PortalCard
           to="/khach-hang"
           accent="navy"
