@@ -319,6 +319,9 @@ function Dashboard({ staff }: { staff: string }) {
         <StatCard label="Nhân viên" value={staff} color="gold" small />
       </div>
 
+      <BirthdaysThisMonth />
+
+
       <form onSubmit={findCustomer} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
         <Label className="text-sm font-bold text-brand-navy">Tìm kiếm nhanh khách hàng</Label>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
