@@ -648,6 +648,8 @@ function CustomersSection({ staff }: { staff: string }) {
   const [editing, setEditing] = useState<Customer | null>(null);
   const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
+  const [lastTx, setLastTx] = useState<Record<string, string | null>>({});
+  const [inactivity, setInactivity] = useState<"all" | "90" | "180" | "365">("all");
 
 
   async function load() {
@@ -656,7 +658,19 @@ function CustomersSection({ staff }: { staff: string }) {
     setItems(list);
     const map = await fetchActivationDates(list.map((c) => c.id));
     setActivations(map);
+    // Last transaction date per customer (only positive earning or redeem activity)
+    const { data: txs } = await supabase
+      .from("transactions")
+      .select("customer_id, created_at, type")
+      .in("type", ["add", "redeem"])
+      .order("created_at", { ascending: false });
+    const lt: Record<string, string | null> = {};
+    for (const t of (txs as { customer_id: string; created_at: string }[]) ?? []) {
+      if (!lt[t.customer_id]) lt[t.customer_id] = t.created_at;
+    }
+    setLastTx(lt);
   }
+
   useEffect(() => { load(); }, []);
 
   async function add(e: React.FormEvent) {
