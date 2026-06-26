@@ -1,228 +1,139 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Search, Sparkles, Gift, Phone, Award, QrCode } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { getTier, formatVnd, normalizePhone } from "@/lib/loyalty";
-import { toast } from "sonner";
-import { Toaster } from "@/components/ui/sonner";
-import { QrScannerModal } from "@/components/qr-scanner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Crown, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Tra cứu điểm - Yến sào Trí Sơn" },
-      { name: "description", content: "Tra cứu điểm thành viên Yến sào Trí Sơn." },
+      { title: "Yến sào Trí Sơn - Cổng thành viên" },
+      {
+        name: "description",
+        content:
+          "Cổng điều hướng hệ thống tích điểm thành viên Yến sào Trí Sơn dành cho khách hàng và nhân viên.",
+      },
     ],
   }),
-  component: CustomerView,
+  component: PortalView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number };
-type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
-
-function CustomerView() {
-  const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
-
-  async function lookupBy(p: string) {
-    if (p.length < 8) {
-      toast.error("Số điện thoại / mã QR không hợp lệ");
-      return;
-    }
-    setLoading(true);
-    setSearched(true);
-    const [{ data: cust }, { data: rws }] = await Promise.all([
-      supabase.from("customers").select("*").eq("phone", p).maybeSingle(),
-      supabase.from("rewards").select("*").eq("active", true).order("points_required"),
-    ]);
-    setCustomer((cust as Customer) ?? null);
-    setRewards((rws as Reward[]) ?? []);
-    setLoading(false);
-  }
-  async function lookup(e?: React.FormEvent) {
-    e?.preventDefault();
-    await lookupBy(normalizePhone(phone));
-  }
-
-  function handleQrResult(text: string) {
-    setQrOpen(false);
-    // Accept raw phone, or formats like "tel:0907..." or "trison:phone:0907..."
-    const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
-    const p = normalizePhone(cleaned);
-    setPhone(p);
-    lookupBy(p);
-  }
-
+function PortalView() {
   return (
-    <div className="min-h-screen bg-background">
-      <Toaster position="top-center" richColors />
-
-      <header
-        className="relative overflow-hidden text-brand-red-foreground"
-        style={{ background: "linear-gradient(135deg, var(--brand-red), oklch(0.45 0.2 25))" }}
-      >
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-        <div className="relative mx-auto max-w-2xl px-5 py-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5" /> Thành viên VIP
-          </div>
-          <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">YẾN SÀO TRÍ SƠN</h1>
-          <p className="mt-2 text-base font-medium text-white/95 md:text-lg">
-            Hệ thống Tích điểm Thành viên Tri Ân Khách Hàng
-          </p>
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "radial-gradient(1200px 600px at 10% -10%, oklch(0.95 0.04 27 / 0.6), transparent 60%), radial-gradient(1000px 500px at 110% 10%, oklch(0.9 0.05 260 / 0.5), transparent 60%), oklch(0.97 0.005 260)",
+      }}
+    >
+      <header className="mx-auto max-w-6xl px-5 pt-8 pb-2 text-center md:pt-14">
+        <div className="inline-flex items-center gap-2 rounded-full border border-brand-navy/15 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy shadow-[var(--shadow-soft)] backdrop-blur">
+          <Sparkles className="h-3.5 w-3.5 text-brand-red" /> Thương hiệu cao cấp
         </div>
+        <h1 className="mt-5 text-3xl font-black leading-tight text-brand-navy md:text-5xl">
+          YẾN SÀO <span className="text-brand-red">TRÍ SƠN</span>
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl text-base font-medium text-muted-foreground md:text-lg">
+          Hệ thống Tích điểm Thành viên — Tri ân khách hàng & quản trị nội bộ.
+        </p>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-6 md:py-10">
-        <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
-          <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Nhập số điện thoại của bạn..."
-                className="h-14 rounded-2xl border-2 pl-12 text-base font-semibold"
-              />
-            </div>
-            <Button type="submit" disabled={loading} className="h-14 rounded-2xl bg-brand-navy px-7 text-base font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
-              <Search className="mr-2 h-5 w-5" />
-              {loading ? "Đang tra..." : "Tra cứu điểm"}
-            </Button>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <Button
-            type="button"
-            onClick={() => setQrOpen(true)}
-            variant="outline"
-            className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
-          >
-            <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
-          </Button>
-        </form>
-
-        <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
-
-        {searched && !loading && !customer && (
-          <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
-            <p className="text-base font-semibold text-foreground">Không tìm thấy thông tin thành viên</p>
-            <p className="mt-1 text-sm text-muted-foreground">Vui lòng liên hệ thu ngân để đăng ký thành viên mới.</p>
-          </div>
-        )}
-
-        {customer && <MemberCard customer={customer} rewards={rewards} />}
+      <main className="mx-auto grid max-w-6xl gap-5 px-5 py-8 md:grid-cols-2 md:gap-7 md:py-12">
+        <PortalCard
+          to="/khach-hang"
+          accent="navy"
+          icon={<Crown className="h-12 w-12 md:h-14 md:w-14" strokeWidth={2.2} />}
+          eyebrow="Member Portal"
+          title="DÀNH CHO KHÁCH HÀNG"
+          titleClass="text-brand-red"
+          description="Quét mã tra cứu điểm thưởng, hạng thành viên và danh sách quà tặng tri ân."
+          cta="Tra cứu điểm thành viên"
+        />
+        <PortalCard
+          to="/admin"
+          accent="red"
+          icon={<ShieldCheck className="h-12 w-12 md:h-14 md:w-14" strokeWidth={2.2} />}
+          eyebrow="Staff Portal"
+          title="DÀNH CHO NHÂN VIÊN"
+          titleClass="text-brand-navy"
+          description="Hệ thống quản trị nội bộ dành cho thu ngân cộng/trừ điểm và xử lý đổi quà tại quầy."
+          cta="Đăng nhập quản trị"
+        />
       </main>
+
+      <footer className="px-5 pb-8 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        © {new Date().getFullYear()} Yến sào Trí Sơn
+      </footer>
     </div>
   );
 }
 
-function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
-  const tier = getTier(customer.points);
-  const progress = tier.next
-    ? Math.min(100, ((customer.points - tier.min) / (tier.next - tier.min)) * 100)
-    : 100;
-  const remaining = tier.next ? tier.next - customer.points : 0;
+function PortalCard({
+  to,
+  accent,
+  icon,
+  eyebrow,
+  title,
+  titleClass,
+  description,
+  cta,
+}: {
+  to: string;
+  accent: "red" | "navy";
+  icon: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  titleClass: string;
+  description: string;
+  cta: string;
+}) {
+  const isNavy = accent === "navy";
+  const borderColor = isNavy ? "var(--brand-navy)" : "var(--brand-red)";
+  const iconColor = isNavy ? "var(--brand-navy)" : "var(--brand-red)";
+  const iconBg = isNavy
+    ? "linear-gradient(135deg, oklch(0.95 0.03 260), oklch(0.9 0.06 260))"
+    : "linear-gradient(135deg, oklch(0.96 0.03 27), oklch(0.92 0.08 27))";
 
   return (
-    <div className="mt-6 space-y-6">
-      <p className="text-center text-lg font-bold text-brand-navy">
-        Xin chào, <span className="text-brand-red">{customer.name}</span> 👋
-      </p>
-
-      <div className="relative overflow-hidden rounded-3xl p-6 shadow-[var(--shadow-card)]" style={{ background: tier.gradient, color: tier.text }}>
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-20" style={{ background: tier.accent }} />
-        <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full opacity-10" style={{ background: tier.accent }} />
-        <div className="relative flex items-start justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-widest opacity-75">Thẻ thành viên</div>
-            <div className="mt-1 flex items-center gap-2 text-xl font-black">
-              <Award className="h-5 w-5" style={{ color: tier.accent }} />
-              Hạng {tier.name}
-            </div>
-          </div>
-          <div className="text-right text-xs font-semibold uppercase tracking-wider opacity-75">Trí Sơn</div>
+    <Link
+      to={to}
+      className="group relative block overflow-hidden rounded-3xl border-2 bg-card p-7 text-left shadow-[var(--shadow-soft)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 md:p-9"
+      style={{
+        borderColor,
+        // @ts-expect-error custom prop
+        "--tw-ring-color": borderColor,
+      }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: isNavy
+            ? "radial-gradient(600px 200px at 50% 0%, oklch(0.27 0.09 260 / 0.08), transparent 70%)"
+            : "radial-gradient(600px 200px at 50% 0%, oklch(0.55 0.22 27 / 0.08), transparent 70%)",
+        }}
+      />
+      <div className="relative flex flex-col items-center text-center">
+        <div
+          className="grid h-24 w-24 place-items-center rounded-2xl shadow-[var(--shadow-soft)] transition-transform duration-300 group-hover:scale-110 md:h-28 md:w-28"
+          style={{ background: iconBg, color: iconColor }}
+        >
+          {icon}
         </div>
-        <div className="relative mt-6 text-center">
-          <div className="text-6xl font-black leading-none md:text-7xl">{customer.points}</div>
-          <div className="mt-1 text-base font-bold opacity-90">ĐIỂM</div>
-          <div className="mt-2 text-xs opacity-75">Tương đương mức chi tiêu {formatVnd(customer.points * 100000)}</div>
+        <div className="mt-5 text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+          {eyebrow}
         </div>
-        <div className="relative mt-6 font-mono text-sm tracking-widest opacity-80">
-          •••• •••• {customer.phone.slice(-4)}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
-        {tier.next ? (
-          <>
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="text-sm font-semibold text-muted-foreground">
-                Tiến trình lên hạng {tier.next === 50 ? "Vàng" : "Kim Cương"}
-              </span>
-              <span className="text-sm font-bold text-brand-red">còn {remaining} điểm</span>
-            </div>
-            <Progress value={progress} className="h-3 rounded-full" />
-            <div className="mt-2 flex justify-between text-xs font-medium text-muted-foreground">
-              <span>{tier.min}đ</span>
-              <span>{tier.next}đ</span>
-            </div>
-          </>
-        ) : (
-          <p className="text-center text-sm font-bold text-brand-navy">🎉 Bạn đã đạt hạng cao nhất - Kim Cương!</p>
-        )}
-      </div>
-
-      <div>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-brand-navy">
-          <Gift className="h-5 w-5 text-brand-red" /> Đổi quà ưu đãi
+        <h2 className={`mt-2 text-2xl font-black leading-tight md:text-3xl ${titleClass}`}>
+          {title}
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {rewards.map((r) => {
-            const enough = customer.points >= r.points_required;
-            return (
-              <div key={r.id} className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
-                {r.image_url ? (
-                  <div className="h-36 overflow-hidden bg-muted">
-                    <img src={r.image_url} alt={r.name} className="h-full w-full object-cover" loading="lazy" />
-                  </div>
-                ) : (
-                  <div className="flex h-32 items-center justify-center text-5xl" style={{ background: "linear-gradient(135deg, oklch(0.95 0.03 27), oklch(0.96 0.04 60))" }}>
-                    🎁
-                  </div>
-                )}
-                <div className="p-4">
-                  <h3 className="font-bold leading-tight text-foreground">{r.name}</h3>
-                  {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}
-                  <div className="mt-2 text-sm font-bold text-brand-navy">Cần {r.points_required} điểm</div>
-                  {enough ? (
-                    <div className="mt-3 rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
-                      ✓ Đủ điểm đổi quà
-                    </div>
-                  ) : (
-                    <div className="mt-3 rounded-xl bg-muted px-3 py-2 text-center text-sm font-semibold text-muted-foreground">
-                      Còn thiếu {r.points_required - customer.points} điểm
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <p className="mt-3 max-w-sm text-sm font-medium leading-relaxed text-muted-foreground md:text-base">
+          {description}
+        </p>
+        <div
+          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition-all duration-300 group-hover:gap-3 group-hover:shadow-[var(--shadow-card)] md:text-base"
+          style={{ background: borderColor }}
+        >
+          {cta}
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
