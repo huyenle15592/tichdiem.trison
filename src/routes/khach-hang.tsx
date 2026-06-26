@@ -73,7 +73,7 @@ function CustomerView() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen bg-transparent">
       <LotusScene />
       <Toaster position="top-center" richColors />
 

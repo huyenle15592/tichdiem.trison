@@ -193,7 +193,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   ];
 
   return (
-    <div className="relative flex min-h-screen bg-background">
+    <div className="relative flex min-h-screen bg-transparent">
       <LotusScene />
       <Toaster position="top-center" richColors />
 
