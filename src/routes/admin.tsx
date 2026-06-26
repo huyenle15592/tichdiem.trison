@@ -691,7 +691,34 @@ function CustomersSection({ staff }: { staff: string }) {
 
 
 
-  const filtered = items.filter((c) => c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()));
+  const now = Date.now();
+  const minDays = inactivity === "all" ? 0 : Number(inactivity);
+  const withInactivity = items.map((c) => {
+    const last = lastTx[c.id] ?? null;
+    const days = last ? Math.floor((now - new Date(last).getTime()) / 86400000) : null;
+    return { c, last, days };
+  });
+  const searched = withInactivity.filter(({ c }) =>
+    c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()),
+  );
+  const filtered = searched.filter(({ c }) => inactivity === "all"
+    ? c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase())
+    : false);
+  // For inactivity table: only customers with last tx older than threshold (excludes those never bought when filter is active)
+  const inactiveList = searched
+    .filter(({ days }) => days !== null && days > minDays)
+    .sort((a, b) => (b.days ?? 0) - (a.days ?? 0));
+  void filtered;
+
+  async function copyPhone(p: string) {
+    try {
+      await navigator.clipboard.writeText(p);
+      toast.success(`Đã copy SĐT: ${p}`);
+    } catch {
+      toast.error("Không thể copy");
+    }
+  }
+
 
   return (
     <div className="space-y-5">
