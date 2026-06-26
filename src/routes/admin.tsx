@@ -350,6 +350,109 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 }
 
 
+function GlobalQuickSearch({ staff }: { staff: string }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Customer[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setResults([]); setOpen(false); return; }
+    setLoading(true);
+    setOpen(true);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const digits = q.replace(/\D/g, "");
+      const filter = digits.length >= 2
+        ? `phone.ilike.%${digits}%,name.ilike.%${q}%`
+        : `name.ilike.%${q}%`;
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .or(filter)
+        .order("name")
+        .limit(8);
+      if (cancelled) return;
+      setResults((data as Customer[]) ?? []);
+      setLoading(false);
+    }, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
+  return (
+    <>
+      <div className="relative rounded-2xl border-2 border-brand-red/30 bg-card/95 p-3 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <Search className="h-5 w-5 shrink-0 text-brand-red" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => { if (results.length) setOpen(true); }}
+            onBlur={() => setTimeout(() => setOpen(false), 200)}
+            placeholder="🔎 Tìm nhanh khách hàng theo SĐT hoặc Tên... (cộng điểm trong 2 giây)"
+            className="h-11 flex-1 rounded-xl border-0 bg-transparent text-base font-semibold focus-visible:ring-0"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(""); setResults([]); setOpen(false); }}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
+              aria-label="Xoá"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {open && (
+          <div className="absolute inset-x-0 top-full z-40 mt-2 max-h-96 overflow-y-auto rounded-2xl border-2 border-brand-navy/15 bg-card shadow-[var(--shadow-card)]">
+            {loading && (
+              <div className="px-4 py-3 text-sm italic text-muted-foreground">Đang tìm...</div>
+            )}
+            {!loading && results.length === 0 && (
+              <div className="px-4 py-3 text-sm italic text-muted-foreground">
+                Không tìm thấy khách hàng phù hợp.
+              </div>
+            )}
+            {!loading && results.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setSelected(c); setOpen(false); setQuery(""); }}
+                className="flex w-full items-center justify-between gap-3 border-b border-border/50 px-4 py-3 text-left transition hover:bg-brand-red/5 last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-black text-brand-navy">{c.name}</div>
+                  <div className="font-mono text-xs text-muted-foreground">{c.phone}</div>
+                </div>
+                <div className="shrink-0 rounded-full bg-brand-red/10 px-3 py-1 text-sm font-black text-brand-red">
+                  {c.points} điểm
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <QuickAddPointsModal
+          customer={selected}
+          staff={staff}
+          onClose={() => setSelected(null)}
+          onSaved={() => { setSelected(null); toast.success("Đã cập nhật giao dịch"); }}
+        />
+      )}
+    </>
+  );
+}
+
+
+
+
+
 function Dashboard({ staff }: { staff: string }) {
   const [phone, setPhone] = useState("");
   const [customer, setCustomer] = useState<Customer | null>(null);
