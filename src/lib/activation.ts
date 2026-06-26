@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/admin-db";
 
 /**
  * Activation date = the created_at of the customer's FIRST point-earning

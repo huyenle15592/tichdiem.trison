@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/admin-db";
 import { addOneYearIso } from "./loyalty";
 import { fetchActivationDate, fetchActivationDates } from "./activation";
 

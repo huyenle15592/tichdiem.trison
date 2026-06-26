@@ -1,37 +1,29 @@
+// Reads tier thresholds via a public server function so the customer
+// page works without the admin token (the database itself blocks anon).
+// Realtime sync was removed — tier thresholds change rarely and the
+// admin page reloads them on save.
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
+import { getTierSettings } from "@/lib/public-data.functions";
 
 export function useTierThresholds(): TierThresholds {
   const [t, setT] = useState<TierThresholds>(DEFAULT_THRESHOLDS);
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from("tier_settings")
-        .select("gold_min,diamond_min")
-        .eq("id", "singleton")
-        .maybeSingle();
-      if (alive && data) {
+    getTierSettings()
+      .then((data) => {
+        if (!alive || !data) return;
         setT({
-          goldMin: Number((data as any).gold_min) || DEFAULT_THRESHOLDS.goldMin,
-          diamondMin: Number((data as any).diamond_min) || DEFAULT_THRESHOLDS.diamondMin,
+          goldMin: Number(data.gold_min) || DEFAULT_THRESHOLDS.goldMin,
+          diamondMin: Number(data.diamond_min) || DEFAULT_THRESHOLDS.diamondMin,
         });
-      }
-    };
-    load();
-    const ch = supabase
-      .channel("tier_settings_sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tier_settings" },
-        () => load(),
-      )
-      .subscribe();
+      })
+      .catch(() => {
+        /* keep defaults on failure */
+      });
     return () => {
       alive = false;
-      supabase.removeChannel(ch);
     };
   }, []);
 
