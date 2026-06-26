@@ -14,6 +14,8 @@ import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QRCodeSVG } from "qrcode.react";
+import { useTierThresholds } from "@/lib/use-tier-thresholds";
+
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
@@ -193,7 +195,9 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 };
 
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
-  const tier = getTier(customer.points);
+  const thresholds = useTierThresholds();
+  const tier = getTier(customer.points, thresholds);
+
   const theme = TIER_THEMES[tier.key];
   const progress = tier.next
     ? Math.min(100, ((customer.points - tier.min) / (tier.next - tier.min)) * 100)
@@ -313,7 +317,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
           <>
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm font-semibold text-muted-foreground">
-                Tiến trình lên hạng {tier.next === 50 ? "Vàng" : "Kim Cương"}
+                Tiến trình lên hạng {tier.key === "silver" ? "Vàng" : "Kim Cương"}
               </span>
               <span className="text-sm font-bold text-brand-red">còn {remaining} điểm</span>
             </div>

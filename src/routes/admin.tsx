@@ -29,11 +29,15 @@ import {
   MessageCircle,
   Pencil,
   X,
+  Crown,
+  Save,
 } from "lucide-react";
-import { formatVnd, getTier, normalizePhone, cardWindow } from "@/lib/loyalty";
+import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
+import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -177,7 +181,7 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
 
 
 
-type Section = "dashboard" | "customers" | "history" | "rewards";
+type Section = "dashboard" | "customers" | "history" | "rewards" | "tiers";
 
 function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("dashboard");
@@ -190,7 +194,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { id: "customers", label: "Danh sách khách hàng", icon: Users },
     { id: "history", label: "Lịch sử giao dịch", icon: History },
     { id: "rewards", label: "Cài đặt quà tặng", icon: Gift },
+    { id: "tiers", label: "Cài đặt hạng & Tích điểm", icon: Crown },
   ];
+
 
   return (
     <div className="relative flex min-h-screen bg-transparent">
@@ -277,9 +283,11 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
         <div className="mx-auto max-w-5xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
-          {section === "customers" && <CustomersSection />}
+          {section === "customers" && <CustomersSection staff={staff} />}
           {section === "history" && <HistorySection />}
           {section === "rewards" && <RewardsSection />}
+          {section === "tiers" && <TierSettingsSection />}
+
         </div>
       </main>
     </div>
@@ -381,7 +389,9 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
-  const tier = getTier(customer.points);
+  const thresholds = useTierThresholds();
+  const tier = getTier(customer.points, thresholds);
+
   const points = useMemo(() => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000), [amount]);
   const win = cardWindow(activatedAt);
 
@@ -518,14 +528,17 @@ function TransactionList({ items }: { items: Transaction[] }) {
   );
 }
 
-function CustomersSection() {
+function CustomersSection({ staff }: { staff: string }) {
+  const thresholds = useTierThresholds();
   const [items, setItems] = useState<Customer[]>([]);
   const [q, setQ] = useState("");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newBirth, setNewBirth] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
+
 
   async function load() {
     const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
@@ -617,10 +630,10 @@ function CustomersSection() {
         </div>
         <ul className="divide-y">
           {filtered.map((c) => {
-            const tier = getTier(c.points);
+            const tier = getTier(c.points, thresholds);
             return (
-              <li key={c.id} className="flex items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0 flex-1">
                   <div className="font-bold">{c.name}</div>
                   <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
                   {c.birth_date && (
@@ -646,6 +659,13 @@ function CustomersSection() {
                     {tier.name}
                   </span>
                   <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
+                  <Button
+                    onClick={() => setQuickAdd(c)}
+                    size="sm"
+                    className="h-10 rounded-xl bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90 shadow-[var(--shadow-soft)]"
+                  >
+                    <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                  </Button>
                   <Button onClick={() => setEditing(c)} size="sm" variant="ghost" className="text-brand-navy">
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -655,6 +675,7 @@ function CustomersSection() {
           })}
           {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
         </ul>
+
       </div>
 
       {editing && (
@@ -664,6 +685,15 @@ function CustomersSection() {
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+      {quickAdd && (
+        <QuickAddPointsModal
+          customer={quickAdd}
+          staff={staff}
+          onClose={() => setQuickAdd(null)}
+          onSaved={() => { setQuickAdd(null); load(); }}
+        />
+      )}
+
     </div>
   );
 }
@@ -1039,4 +1069,259 @@ function EditCustomerModal({
     </div>
   );
 }
+
+// ============================================================
+// Quick add points modal (red button in customer list)
+// ============================================================
+
+function QuickAddPointsModal({
+  customer,
+  staff,
+  onClose,
+  onSaved,
+}: {
+  customer: Customer;
+  staff: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const points = useMemo(
+    () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
+    [amount],
+  );
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (points <= 0) { toast.error("Hóa đơn phải tối thiểu 100.000đ"); return; }
+    setBusy(true);
+    const newPoints = customer.points + points;
+    const { error: e1 } = await supabase.from("customers").update({ points: newPoints }).eq("id", customer.id);
+    if (e1) { toast.error("Lỗi: " + e1.message); setBusy(false); return; }
+    const { error: e2 } = await supabase.from("transactions").insert({
+      customer_id: customer.id,
+      points_change: points,
+      amount: Number(amount.replace(/[^0-9]/g, "")) || null,
+      reason: reason || "Cộng điểm hóa đơn",
+      staff_name: staff,
+      type: "add",
+    });
+    setBusy(false);
+    if (e2) { toast.error("Lỗi giao dịch: " + e2.message); return; }
+    toast.success(`+${points} điểm cho ${customer.name}`);
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl bg-card p-6 shadow-[var(--shadow-card)]"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-xl font-black text-brand-red">Cộng điểm hóa đơn</h3>
+            <div className="mt-1 truncate text-sm font-semibold text-brand-navy">
+              {customer.name} • <span className="font-mono">{customer.phone}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">Hiện có: {customer.points} điểm</div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-accent" aria-label="Đóng">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div>
+          <Label className="text-sm font-bold">Số tiền hóa đơn (VNĐ)</Label>
+          <Input
+            inputMode="numeric"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="Ví dụ: 500000"
+            autoFocus
+            className="mt-1 h-14 rounded-xl border-2 text-lg font-black"
+          />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Tỷ lệ 100.000đ = 1 điểm →{" "}
+            <span className="text-base font-black text-brand-red">+{points} điểm</span>
+            {amount && <span className="ml-1">({formatVnd(Number(amount))})</span>}
+          </p>
+        </div>
+
+        <div className="mt-3">
+          <Label className="text-sm font-bold">Ghi chú (tuỳ chọn)</Label>
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder='Vd: "1 hộp yến tinh chế"'
+            className="mt-1 h-12 rounded-xl border-2"
+          />
+        </div>
+
+        <div className="mt-5 flex gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Huỷ</Button>
+          <div className="flex-1" />
+          <Button
+            type="submit"
+            disabled={busy || points <= 0}
+            className="h-12 rounded-xl bg-brand-red px-6 text-base font-black text-brand-red-foreground hover:bg-brand-red/90"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            {busy ? "Đang lưu..." : `Cộng +${points} điểm`}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// Tier thresholds settings
+// ============================================================
+
+function TierSettingsSection() {
+  const [goldMin, setGoldMin] = useState<string>(String(DEFAULT_THRESHOLDS.goldMin));
+  const [diamondMin, setDiamondMin] = useState<string>(String(DEFAULT_THRESHOLDS.diamondMin));
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("tier_settings")
+      .select("gold_min,diamond_min")
+      .eq("id", "singleton")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setGoldMin(String((data as any).gold_min));
+          setDiamondMin(String((data as any).diamond_min));
+        }
+        setLoaded(true);
+      });
+  }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    const g = Number(goldMin);
+    const d = Number(diamondMin);
+    if (!Number.isFinite(g) || g < 1) { toast.error("Mốc Vàng phải là số dương"); return; }
+    if (!Number.isFinite(d) || d <= g) { toast.error("Mốc Kim Cương phải lớn hơn mốc Vàng"); return; }
+    setBusy(true);
+    const { error } = await supabase
+      .from("tier_settings")
+      .upsert({ id: "singleton", gold_min: g, diamond_min: d, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Đã cập nhật luật chơi! Khách hàng sẽ thấy ngay theo thời gian thực.");
+  }
+
+  function resetDefaults() {
+    setGoldMin(String(DEFAULT_THRESHOLDS.goldMin));
+    setDiamondMin(String(DEFAULT_THRESHOLDS.diamondMin));
+  }
+
+  const g = Number(goldMin) || 0;
+  const d = Number(diamondMin) || 0;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-black text-brand-navy md:text-3xl">
+          <Crown className="h-7 w-7 text-brand-red" /> Cài đặt hạng & Tích điểm
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Tùy chỉnh số điểm cần thiết để khách hàng lên hạng. Thay đổi sẽ tự động áp dụng cho{" "}
+          <strong>tất cả khách hàng</strong> trên màn hình tra cứu theo thời gian thực.
+        </p>
+      </div>
+
+      <form onSubmit={save} className="space-y-4 rounded-2xl border bg-card p-6 shadow-[var(--shadow-card)]">
+        {/* Silver */}
+        <div className="rounded-2xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-100 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-full bg-gradient-to-br from-slate-200 to-slate-400 px-3 py-1 text-xs font-black text-slate-900">
+              HẠNG BẠC
+            </span>
+            <span className="text-xs text-muted-foreground">Mặc định: dưới 50 điểm</span>
+          </div>
+          <Label className="text-sm font-bold text-brand-navy">
+            Khách có điểm dưới mốc Vàng sẽ thuộc Hạng Bạc
+          </Label>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            Áp dụng: <span className="text-brand-red">0 → {Math.max(0, g - 1)} điểm</span>
+          </p>
+        </div>
+
+        {/* Gold */}
+        <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-full bg-gradient-to-br from-amber-300 to-amber-600 px-3 py-1 text-xs font-black text-amber-950">
+              HẠNG VÀNG
+            </span>
+            <span className="text-xs text-muted-foreground">Mặc định: từ 50 - 199 điểm</span>
+          </div>
+          <Label className="text-sm font-bold text-brand-navy">
+            Mốc điểm tối thiểu để lên Hạng Vàng
+          </Label>
+          <Input
+            inputMode="numeric"
+            value={goldMin}
+            disabled={!loaded}
+            onChange={(e) => setGoldMin(e.target.value.replace(/[^0-9]/g, ""))}
+            className="mt-2 h-14 rounded-xl border-2 text-2xl font-black text-brand-navy"
+          />
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            Áp dụng: <span className="text-brand-red">{g} → {Math.max(g, d - 1)} điểm</span>
+          </p>
+        </div>
+
+        {/* Diamond */}
+        <div className="rounded-2xl border-2 border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-700 p-5 text-white">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-900">
+              HẠNG KIM CƯƠNG
+            </span>
+            <span className="text-xs text-white/70">Mặc định: từ 200 điểm trở lên</span>
+          </div>
+          <Label className="text-sm font-bold text-white">
+            Mốc điểm tối thiểu để lên Hạng Kim Cương
+          </Label>
+          <Input
+            inputMode="numeric"
+            value={diamondMin}
+            disabled={!loaded}
+            onChange={(e) => setDiamondMin(e.target.value.replace(/[^0-9]/g, ""))}
+            className="mt-2 h-14 rounded-xl border-2 border-white/30 bg-white/10 text-2xl font-black text-white placeholder:text-white/50"
+          />
+          <p className="mt-1 text-sm font-semibold text-white/90">
+            Áp dụng: <span className="text-amber-300">từ {d} điểm trở lên</span>
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <Button type="button" variant="ghost" onClick={resetDefaults} className="text-muted-foreground">
+            Khôi phục mặc định (50 / 200)
+          </Button>
+          <Button
+            type="submit"
+            disabled={busy || !loaded}
+            className="h-14 rounded-xl bg-brand-navy px-8 text-base font-black text-brand-navy-foreground shadow-[var(--shadow-card)] hover:bg-brand-navy/90"
+          >
+            <Save className="mr-2 h-5 w-5" />
+            {busy ? "Đang lưu..." : "CẬP NHẬT LUẬT CHƠI"}
+          </Button>
+        </div>
+      </form>
+
+      <div className="rounded-2xl border border-dashed bg-muted/40 p-4 text-xs text-muted-foreground">
+        💡 Lưu ý: Khi bạn thay đổi mốc điểm, toàn bộ hạng thẻ thành viên hiện hữu (trên trang khách
+        hàng) sẽ tự động được tính toán lại theo thời gian thực — không cần khách phải tải lại trang.
+      </div>
+    </div>
+  );
+}
+
 
