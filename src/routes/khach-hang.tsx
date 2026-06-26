@@ -16,6 +16,8 @@ import { LotusScene } from "@/components/lotus-scene";
 import lotusCardImg from "@/assets/lotus-card.png.asset.json";
 import { QRCodeSVG } from "qrcode.react";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
+import { autoExpireCustomer } from "@/lib/expiry";
+import { fetchActivationDate } from "@/lib/activation";
 
 
 export const Route = createFileRoute("/khach-hang")({
@@ -100,15 +102,15 @@ function CustomerView() {
       const row = (custRows && custRows[0]) || null;
       let cust: Customer | null = null;
       if (row) {
-        const { data: firstAdd } = await supabase
-          .from("transactions")
-          .select("created_at")
-          .eq("customer_id", row.id)
-          .gt("points_change", 0)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        cust = { ...(row as any), activated_at: (firstAdd?.created_at as string | undefined) ?? null };
+        // Auto-expire nếu thẻ đã quá hạn 1 năm
+        const exp = await autoExpireCustomer({ id: row.id, points: row.points });
+        const activatedAt = exp.expired ? null : await fetchActivationDate(row.id);
+        if (exp.expired) {
+          toast.message("Thẻ thành viên đã hết hạn chu kỳ 1 năm và được kích hoạt lại.", {
+            description: "Số điểm đã đặt về 0. Hãy tích điểm để bắt đầu chu kỳ mới.",
+          });
+        }
+        cust = { ...(row as any), points: exp.points, activated_at: activatedAt };
       }
       setCustomer(cust);
       setRewards((rws as Reward[]) ?? []);
