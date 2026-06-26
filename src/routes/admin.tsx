@@ -1377,6 +1377,8 @@ function QuickAddPointsModal({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeemBusy, setRedeemBusy] = useState(false);
   const points = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
@@ -1401,6 +1403,52 @@ function QuickAddPointsModal({
     if (e2) { toast.error("Lỗi giao dịch: " + e2.message); return; }
     toast.success(`+${points} điểm cho ${customer.name}`);
     onSaved();
+  }
+
+  async function redeem(e: React.FormEvent) {
+    e.preventDefault();
+    const code = redeemCode.trim().toUpperCase();
+    if (!code) { toast.error("Vui lòng nhập Mã sản phẩm"); return; }
+    setRedeemBusy(true);
+    try {
+      const { data: reward, error: re } = await supabase
+        .from("rewards")
+        .select("id, name, code, points_required, active")
+        .ilike("code", code)
+        .maybeSingle();
+      if (re) throw re;
+      if (!reward) { toast.error(`Không tìm thấy quà với mã "${code}"`); setRedeemBusy(false); return; }
+      if (!(reward as any).active) { toast.error("Phần quà này đã ngừng hoạt động"); setRedeemBusy(false); return; }
+      const r = reward as { id: string; name: string; code: string; points_required: number };
+      if (customer.points < r.points_required) {
+        toast.error(`Khách thiếu ${r.points_required - customer.points} điểm để đổi "${r.name}"`);
+        setRedeemBusy(false);
+        return;
+      }
+      if (!confirm(`Xác nhận trừ ${r.points_required} điểm để đổi "${r.name}"?`)) {
+        setRedeemBusy(false); return;
+      }
+      const newPoints = customer.points - r.points_required;
+      const { error: u1 } = await supabase.from("customers").update({ points: newPoints }).eq("id", customer.id);
+      if (u1) throw u1;
+      const { error: u2 } = await supabase.from("transactions").insert({
+        customer_id: customer.id,
+        points_change: -r.points_required,
+        amount: null,
+        reason: `Đổi quà: ${r.name} (Mã ${r.code})`,
+        staff_name: staff,
+        type: "redeem",
+      });
+      if (u2) throw u2;
+      toast.success(`Đã đổi quà "${r.name}" • -${r.points_required} điểm`);
+      setRedeemCode("");
+      onSaved();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Lỗi đổi quà: " + msg);
+    } finally {
+      setRedeemBusy(false);
+    }
   }
 
   return (
