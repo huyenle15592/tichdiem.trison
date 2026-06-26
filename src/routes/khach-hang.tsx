@@ -237,36 +237,37 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
     bg:
       "linear-gradient(135deg, #ffffff 0%, #f1f3f7 45%, #d9dde4 100%)",
     text: "#0a1e3f",
-    subtext: "rgba(10, 30, 63, 0.7)",
-    pointsColor: "#b8860b",
-    progressTrack: "rgba(10, 30, 63, 0.12)",
-    progressFill: "linear-gradient(90deg, #b8860b, #f6c945)",
+    subtext: "rgba(10, 30, 63, 0.78)",
+    pointsColor: "#0a1e3f",
+    progressTrack: "rgba(10, 30, 63, 0.15)",
+    progressFill: "linear-gradient(90deg, #0a1e3f, #1e3a8a)",
     logoBg: "#ffffff",
     lotus: "pink",
   },
   gold: {
     bg:
       "radial-gradient(ellipse at 30% 30%, #fff2c2 0%, transparent 55%), linear-gradient(135deg, #c9962b 0%, #f6cf64 45%, #a87a2c 100%)",
-    text: "#3a1f0a",
-    subtext: "rgba(58, 31, 10, 0.78)",
-    pointsColor: "#7a1414",
-    progressTrack: "rgba(58, 31, 10, 0.18)",
-    progressFill: "linear-gradient(90deg, #7a1414, #c9962b)",
+    text: "#0a1e3f",
+    subtext: "rgba(10, 30, 63, 0.82)",
+    pointsColor: "#0a1e3f",
+    progressTrack: "rgba(10, 30, 63, 0.2)",
+    progressFill: "linear-gradient(90deg, #0a1e3f, #7a1414)",
     logoBg: "#fff8e3",
     lotus: "pink",
   },
   diamond: {
     bg:
       "radial-gradient(ellipse at 25% 20%, #2a2a2a 0%, transparent 60%), linear-gradient(135deg, #050505 0%, #1a1a1a 50%, #2e2e2e 100%)",
-    text: "#f5f5f5",
-    subtext: "rgba(245, 245, 245, 0.7)",
-    pointsColor: "#e9ecf2",
-    progressTrack: "rgba(255, 255, 255, 0.15)",
+    text: "#ffffff",
+    subtext: "rgba(245, 245, 245, 0.78)",
+    pointsColor: "#ffffff",
+    progressTrack: "rgba(255, 255, 255, 0.18)",
     progressFill: "linear-gradient(90deg, #ffffff, #cfd3dc)",
     logoBg: "#ffffff",
     lotus: "pink",
   },
 };
+
 
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
   const thresholds = useTierThresholds();
@@ -340,29 +341,24 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         className="relative overflow-hidden rounded-3xl shadow-[var(--shadow-card)]"
         style={{ background: theme.bg, color: theme.text, aspectRatio: "1.586 / 1", minHeight: 230 }}
       >
-        {/* Gold sparkle overlay */}
-        {goldTexture && <div className="absolute inset-0 opacity-60" style={goldTexture} />}
-        {/* Lotus motif */}
-        <LotusBg tone={theme.lotus} />
-
-        {/* Real lotus photo decoration — bottom-right */}
+        {/* Real lotus photo decoration — bottom-right, larger spread */}
         <img
           src={lotusCardImg.url}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute bottom-0 right-0 z-0 h-auto w-[38%] max-w-[200px] select-none object-contain"
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-auto w-[55%] max-w-[280px] select-none object-contain"
           style={{
             mixBlendMode: tier.key === "diamond" ? "screen" : "multiply",
-            opacity: tier.key === "diamond" ? 0.35 : tier.key === "gold" ? 0.45 : 0.5,
-            transform: "translate(8%, 12%)",
+            opacity: tier.key === "diamond" ? 0.4 : tier.key === "gold" ? 0.5 : 0.55,
+            transform: "translate(14%, 18%)",
           }}
         />
 
         {/* Content */}
-        <div className="relative z-10 flex h-full flex-col justify-between p-5 md:p-6">
-          {/* Top: logo + tier name */}
-          <div className="flex items-center gap-4 md:gap-5">
-            <div className="flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
+        <div className="relative z-10 flex h-full flex-col p-5 md:p-6">
+          {/* Top row: logo top-left, brand title centered */}
+          <div className="relative flex items-center justify-center">
+            <div className="absolute left-0 top-0 flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
               <img
                 src={trisonLogo.url}
                 alt="Trí Sơn"
@@ -370,64 +366,76 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                 style={{ filter: "none", boxShadow: "none", border: "none" }}
               />
             </div>
-            <div className="leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
-                Yến Sào
-              </div>
-              <div className="text-xl font-bold tracking-[0.15em] md:text-2xl" style={GOLD_METALLIC}>
-                TRÍ SƠN {tier.enName}
+            <div
+              className="text-center text-xl font-extrabold uppercase tracking-[0.18em] md:text-3xl"
+              style={{
+                color: theme.text,
+                fontFamily: "'Times New Roman', serif",
+                textShadow: tier.key === "diamond" ? "0 1px 2px rgba(0,0,0,0.4)" : "none",
+              }}
+            >
+              YẾN SÀO TRÍ SƠN
+              <div className="mt-0.5 text-base font-bold tracking-[0.3em] md:text-xl" style={{ color: theme.text }}>
+                {tier.enName.toUpperCase()}
               </div>
             </div>
           </div>
 
           {/* Middle: big points */}
-          <div className="-mt-2 text-center md:-mt-4">
+          <div className="my-auto text-center">
             <div
-              className="font-bold leading-none"
+              className="font-extrabold leading-none"
               style={{
-                ...GOLD_METALLIC,
+                color: theme.pointsColor,
+                fontFamily: "'Times New Roman', serif",
                 fontSize: "clamp(3rem, 13vw, 5.5rem)",
                 letterSpacing: "0.02em",
+                textShadow: tier.key === "diamond" ? "0 2px 4px rgba(0,0,0,0.5)" : "none",
               }}
             >
               {customer.points}
             </div>
             <div
               className="mt-1 text-xs font-bold tracking-[0.4em] md:text-sm"
-              style={{ ...GOLD_METALLIC, letterSpacing: "0.4em" }}
+              style={{ color: theme.text, fontFamily: "'Times New Roman', serif" }}
             >
               ĐIỂM
             </div>
-            {/* faint progress bar */}
             <div className="mx-auto mt-3 h-1 w-3/4 overflow-hidden rounded-full" style={{ background: theme.progressTrack }}>
               <div className="h-full rounded-full" style={{ width: `${progress}%`, background: theme.progressFill }} />
             </div>
           </div>
 
-          {/* Bottom: dates + name */}
-          <div>
+          {/* Bottom-left: dates + customer name */}
+          <div className="max-w-[70%]">
             {activated ? (
-              <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
-                <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
-                <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
+              <div className="flex flex-col gap-0.5 text-[10px] font-semibold tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
+                <span>MEMBER SINCE: <span className="font-bold" style={{ color: theme.text }}>{memberSince}</span></span>
+                <span>VALID THROUGH: <span className="font-bold" style={{ color: theme.text }}>{validThrough}</span></span>
               </div>
             ) : (
               <div
-                className="text-[11px] font-light italic tracking-[0.15em] md:text-xs"
+                className="text-[11px] font-semibold italic tracking-[0.15em] md:text-xs"
                 style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
               >
                 Kích hoạt chu kỳ mới sau lần tích điểm kế tiếp
               </div>
             )}
             <div
-              className="mt-1 truncate text-lg font-bold uppercase tracking-[0.15em] md:text-2xl"
-              style={GOLD_METALLIC}
+              className="mt-1 truncate text-lg font-extrabold uppercase tracking-[0.15em] md:text-2xl"
+              style={{
+                color: theme.text,
+                fontFamily: "'Times New Roman', serif",
+                textShadow: tier.key === "diamond" ? "0 1px 2px rgba(0,0,0,0.4)" : "none",
+              }}
             >
               {customer.name}
             </div>
           </div>
         </div>
       </div>
+
+
 
       {/* Progress / tier-up panel */}
       <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
