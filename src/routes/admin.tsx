@@ -983,10 +983,14 @@ function EditCustomerModal({
 
         <div className="mb-3 rounded-xl border bg-muted/40 p-3 text-xs">
           <div className="font-bold text-brand-navy">Hạn sử dụng thẻ</div>
-          <div className="mt-1 flex flex-wrap gap-x-4 text-muted-foreground">
-            <span>Member Since: <span className="font-semibold text-foreground">{formatVnDate(customer.created_at)}</span></span>
-            <span>Valid Through: <span className="font-semibold text-brand-red">{formatVnDate(addOneYearIso(customer.created_at))}</span></span>
-          </div>
+          {win.activated ? (
+            <div className="mt-1 flex flex-wrap gap-x-4 text-muted-foreground">
+              <span>Member Since: <span className="font-semibold text-foreground">{win.memberSince}</span></span>
+              <span>Valid Through: <span className="font-semibold text-brand-red">{win.validThrough}</span></span>
+            </div>
+          ) : (
+            <div className="mt-1 italic text-muted-foreground">Chưa kích hoạt — kích hoạt sau lần tích điểm đầu tiên.</div>
+          )}
         </div>
 
 
