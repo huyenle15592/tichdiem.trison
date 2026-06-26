@@ -417,7 +417,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         <div className="mb-3 text-sm font-bold uppercase tracking-wider text-brand-navy">
           Mã QR thẻ thành viên
         </div>
-        <div className="mx-auto inline-block rounded-2xl bg-white p-4 ring-1 ring-border">
+        <div ref={qrRef} className="mx-auto inline-block rounded-2xl bg-white p-4 ring-1 ring-border">
           <QRCodeSVG
             value={`trison:phone:${customer.phone}`}
             size={180}
@@ -425,6 +425,15 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             bgColor="#ffffff"
             fgColor="#0a1e3f"
           />
+        </div>
+        <div className="mt-4">
+          <Button
+            type="button"
+            onClick={downloadQR}
+            className="h-11 rounded-xl bg-brand-navy px-5 text-sm font-bold text-brand-navy-foreground hover:bg-brand-navy/90"
+          >
+            <Download className="mr-2 h-4 w-4" /> Tải mã QR về điện thoại
+          </Button>
         </div>
         <p className="mt-3 text-xs font-medium text-muted-foreground">
           Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
