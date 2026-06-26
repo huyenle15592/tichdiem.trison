@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
+import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
@@ -78,10 +79,13 @@ function CustomerView() {
       >
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
         <div className="relative mx-auto max-w-2xl px-5 py-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur">
+          <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 shadow-[var(--shadow-card)]">
+            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-16 w-auto md:h-20" />
+          </div>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" /> Thành viên VIP
           </div>
-          <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">YẾN SÀO TRÍ SƠN</h1>
+          <h1 className="mt-3 text-3xl font-black leading-tight md:text-4xl">YẾN SÀO TRÍ SƠN</h1>
           <p className="mt-2 text-base font-medium text-white/95 md:text-lg">
             Hệ thống Tích điểm Thành viên Tri Ân Khách Hàng
           </p>

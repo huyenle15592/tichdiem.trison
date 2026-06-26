@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Crown, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
+import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,7 +26,12 @@ function PortalView() {
       }}
     >
       <header className="mx-auto max-w-6xl px-5 pt-8 pb-2 text-center md:pt-14">
-        <div className="inline-flex items-center gap-2 rounded-full border border-brand-navy/15 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy shadow-[var(--shadow-soft)] backdrop-blur">
+        <img
+          src={trisonLogo.url}
+          alt="Yến sào Trí Sơn"
+          className="mx-auto h-28 w-auto md:h-36 drop-shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+        />
+        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-brand-navy/15 bg-white/70 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy shadow-[var(--shadow-soft)] backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-brand-red" /> Thương hiệu cao cấp
         </div>
         <h1 className="mt-5 text-3xl font-black leading-tight text-brand-navy md:text-5xl">

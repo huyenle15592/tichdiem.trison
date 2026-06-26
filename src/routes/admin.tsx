@@ -31,6 +31,7 @@ import {
   X,
 } from "lucide-react";
 import { formatVnd, getTier, normalizePhone } from "@/lib/loyalty";
+import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -114,8 +115,8 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
         className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-[var(--shadow-card)]"
       >
         <div className="mb-6 text-center">
-          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red text-brand-red-foreground">
-            <Lock className="h-7 w-7" />
+          <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-[var(--shadow-soft)] ring-1 ring-border">
+            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-16 w-auto" />
           </div>
           <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
@@ -186,9 +187,9 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="border-b border-sidebar-border px-5 py-5">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-red">
-              <Sparkles className="h-5 w-5 text-brand-red-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white p-1 shadow-[var(--shadow-soft)]">
+              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
             </div>
             <div>
               <div className="text-sm font-black leading-tight">YẾN SÀO</div>
@@ -232,8 +233,8 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-red">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-0.5">
+              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
             </div>
             <span className="text-sm font-black">TRÍ SƠN ADMIN</span>
           </div>
