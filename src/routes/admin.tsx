@@ -630,10 +630,10 @@ function CustomersSection({ staff }: { staff: string }) {
         </div>
         <ul className="divide-y">
           {filtered.map((c) => {
-            const tier = getTier(c.points);
+            const tier = getTier(c.points, thresholds);
             return (
-              <li key={c.id} className="flex items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0 flex-1">
                   <div className="font-bold">{c.name}</div>
                   <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
                   {c.birth_date && (
@@ -659,6 +659,13 @@ function CustomersSection({ staff }: { staff: string }) {
                     {tier.name}
                   </span>
                   <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
+                  <Button
+                    onClick={() => setQuickAdd(c)}
+                    size="sm"
+                    className="h-10 rounded-xl bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90 shadow-[var(--shadow-soft)]"
+                  >
+                    <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                  </Button>
                   <Button onClick={() => setEditing(c)} size="sm" variant="ghost" className="text-brand-navy">
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -668,6 +675,7 @@ function CustomersSection({ staff }: { staff: string }) {
           })}
           {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
         </ul>
+
       </div>
 
       {editing && (
