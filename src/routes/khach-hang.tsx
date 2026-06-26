@@ -31,26 +31,54 @@ type Customer = { id: string; name: string; phone: string; points: number; creat
 type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
-  const [phone, setPhone] = useState("");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
-  async function lookupBy(p: string) {
-    if (p.length < 8) {
-      toast.error("Số điện thoại / mã QR không hợp lệ");
+  async function lookupBy(raw: string) {
+    const q = raw.trim();
+    if (q.length < 2) {
+      toast.error("Vui lòng nhập số điện thoại hoặc họ tên");
       return;
     }
     setLoading(true);
     setSearched(true);
     try {
-      const [cust, { data: rws }] = await Promise.all([
-        lookupCustomerByPhone({ data: { phone: p } }),
+      const digits = q.replace(/\D/g, "");
+      const phoneCandidate = digits.length >= 8 ? normalizePhone(q) : null;
+
+      // Build OR filter: match phone OR name (case-insensitive contains)
+      const safe = q.replace(/[,()]/g, " ");
+      const orParts: string[] = [`name.ilike.%${safe}%`];
+      if (phoneCandidate) orParts.unshift(`phone.eq.${phoneCandidate}`);
+
+      const [{ data: custRows, error: custErr }, { data: rws }] = await Promise.all([
+        supabase
+          .from("customers")
+          .select("id, name, phone, points, created_at")
+          .or(orParts.join(","))
+          .limit(1),
         supabase.from("rewards").select("*").eq("active", true).order("points_required"),
       ]);
-      setCustomer((cust as Customer) ?? null);
+      if (custErr) throw custErr;
+
+      const row = (custRows && custRows[0]) || null;
+      let cust: Customer | null = null;
+      if (row) {
+        const { data: firstAdd } = await supabase
+          .from("transactions")
+          .select("created_at")
+          .eq("customer_id", row.id)
+          .gt("points_change", 0)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        cust = { ...(row as any), activated_at: (firstAdd?.created_at as string | undefined) ?? null };
+      }
+      setCustomer(cust);
       setRewards((rws as Reward[]) ?? []);
     } catch (err) {
       toast.error("Không thể tra cứu. Vui lòng thử lại.");
@@ -62,17 +90,17 @@ function CustomerView() {
 
   async function lookup(e?: React.FormEvent) {
     e?.preventDefault();
-    await lookupBy(normalizePhone(phone));
+    await lookupBy(query);
   }
 
   function handleQrResult(text: string) {
     setQrOpen(false);
-    // Accept raw phone, or formats like "tel:0907..." or "trison:phone:0907..."
     const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
     const p = normalizePhone(cleaned);
-    setPhone(p);
+    setQuery(p);
     lookupBy(p);
   }
+
 
   return (
     <div className="relative min-h-screen bg-transparent">
