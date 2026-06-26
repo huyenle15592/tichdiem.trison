@@ -282,10 +282,19 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
 
           {/* Bottom: dates + name */}
           <div>
-            <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
-              <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
-              <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
-            </div>
+            {activated ? (
+              <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-[10px] tracking-[0.18em] md:text-xs" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
+                <span>MEMBER SINCE: <span className="font-semibold" style={{ color: theme.text }}>{memberSince}</span></span>
+                <span>VALID THROUGH: <span className="font-semibold" style={{ color: theme.text }}>{validThrough}</span></span>
+              </div>
+            ) : (
+              <div
+                className="text-[11px] font-light italic tracking-[0.15em] md:text-xs"
+                style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}
+              >
+                Kích hoạt sau lần tích điểm đầu tiên
+              </div>
+            )}
             <div
               className="mt-1 truncate text-lg font-semibold uppercase tracking-[0.15em] md:text-2xl"
               style={{ fontFamily: "'Times New Roman', serif", color: theme.text }}
