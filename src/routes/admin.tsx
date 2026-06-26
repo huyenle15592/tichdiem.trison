@@ -44,10 +44,12 @@ import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, typ
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import { autoExpireCustomer, fetchExpiringSoon, renewMembershipIfActive, type ExpiringSoon } from "@/lib/expiry";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Settings2 } from "lucide-react";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QrScannerModal } from "@/components/qr-scanner";
+import { Switch } from "@/components/ui/switch";
+import { sendZaloNotification, loadZnsSettings, saveZnsSettings, DEFAULT_ZNS_SETTINGS, type ZnsSettings } from "@/lib/zalo-zns";
 import { Camera } from "lucide-react";
 
 
@@ -193,7 +195,7 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
 
 
 
-type Section = "dashboard" | "customers" | "tier-members" | "history" | "rewards" | "tiers";
+type Section = "dashboard" | "customers" | "tier-members" | "history" | "rewards" | "tiers" | "system";
 
 function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("dashboard");
@@ -208,6 +210,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     { id: "history", label: "Lịch sử giao dịch", icon: History },
     { id: "rewards", label: "Cài đặt quà tặng", icon: Gift },
     { id: "tiers", label: "Cài đặt hạng tích điểm", icon: Sparkles },
+    { id: "system", label: "Cấu hình hệ thống", icon: Settings2 },
   ];
 
 
@@ -302,6 +305,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
           {section === "history" && <HistorySection />}
           {section === "rewards" && <RewardsSection />}
           {section === "tiers" && <TierSettingsSection />}
+          {section === "system" && <SystemConfigSection />}
 
 
         </div>
@@ -1495,6 +1499,17 @@ function EditCustomerModal({
         ? `Đã cập nhật & cộng +${addPoints} điểm`
         : "Đã cập nhật khách hàng",
     );
+    if (addPoints > 0 && !directChanged) {
+      void sendZaloNotification({
+        kind: "add",
+        customerId: customer.id,
+        name: name.trim(),
+        phone: p,
+        pointsAdded: addPoints,
+        totalPoints: finalPoints,
+        txDate: new Date(),
+      });
+    }
     onSaved();
   }
 
@@ -1706,6 +1721,15 @@ function QuickAddPointsModal({
     setBusy(false);
     if (e2) { toast.error("Lỗi giao dịch: " + e2.message); return; }
     toast.success(`+${points} điểm cho ${customer.name}`);
+    void sendZaloNotification({
+      kind: "add",
+      customerId: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      pointsAdded: points,
+      totalPoints: newPoints,
+      txDate: new Date(),
+    });
     onSaved();
   }
 
@@ -1745,6 +1769,16 @@ function QuickAddPointsModal({
       });
       if (u2) throw u2;
       toast.success(`Đã đổi quà "${r.name}" • -${r.points_required} điểm`);
+      void sendZaloNotification({
+        kind: "redeem",
+        customerId: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        rewardName: r.name,
+        rewardCode: r.code,
+        pointsCost: r.points_required,
+        totalPoints: newPoints,
+      });
       setRedeemCode("");
       onSaved();
     } catch (err) {
@@ -2196,3 +2230,117 @@ function CustomerHistoryModal({ customer, onClose }: { customer: Customer; onClo
     </div>
   );
 }
+
+function SystemConfigSection() {
+  const [settings, setSettings] = useState<ZnsSettings>(DEFAULT_ZNS_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+
+  useEffect(() => {
+    loadZnsSettings()
+      .then(setSettings)
+      .catch((e) => toast.error("Không tải được cấu hình: " + (e as Error).message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await saveZnsSettings(settings);
+      toast.success("Đã lưu cấu hình Zalo ZNS");
+    } catch (e) {
+      toast.error("Lỗi lưu: " + (e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Đang tải...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black text-brand-navy">Cấu hình hệ thống</h2>
+        <p className="text-sm text-muted-foreground">Khu vực dành cho Quản lý — cấu hình tích hợp dịch vụ bên ngoài.</p>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-black text-brand-navy">🔌 CẤU HÌNH LIÊN KẾT ZALO OA (ZNS)</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Khung kết nối Zalo Notification Service. Khi nào công ty có tài khoản Zalo OA, hãy điền mã vào và <b>BẬT</b> nút bên dưới để hệ thống bắt đầu gửi tin nhắn cộng/trừ điểm tự động.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <Switch
+              checked={settings.enabled}
+              onCheckedChange={(v) => setSettings((s) => ({ ...s, enabled: v }))}
+            />
+            <span className={`text-xs font-bold ${settings.enabled ? "text-emerald-600" : "text-muted-foreground"}`}>
+              {settings.enabled ? "ĐANG BẬT" : "ĐANG TẮT"}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-bold text-brand-navy">Zalo Access Token</Label>
+            <div className="mt-1 flex gap-2">
+              <Input
+                type={showToken ? "text" : "password"}
+                value={settings.access_token}
+                onChange={(e) => setSettings((s) => ({ ...s, access_token: e.target.value }))}
+                placeholder="Dán Access Token Zalo OA tại đây..."
+                className="h-11 rounded-xl font-mono text-sm"
+              />
+              <Button type="button" variant="outline" onClick={() => setShowToken((v) => !v)} className="h-11 rounded-xl">
+                {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-bold text-brand-navy">Zalo Template ID (Cộng điểm)</Label>
+            <Input
+              value={settings.template_id_add}
+              onChange={(e) => setSettings((s) => ({ ...s, template_id_add: e.target.value }))}
+              placeholder="VD: 123456"
+              className="mt-1 h-11 rounded-xl font-mono text-sm"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm font-bold text-brand-navy">Zalo Template ID (Đổi quà)</Label>
+            <Input
+              value={settings.template_id_redeem}
+              onChange={(e) => setSettings((s) => ({ ...s, template_id_redeem: e.target.value }))}
+              placeholder="VD: 654321"
+              className="mt-1 h-11 rounded-xl font-mono text-sm"
+            />
+          </div>
+
+          <Button
+            onClick={save}
+            disabled={saving}
+            className="h-12 w-full rounded-xl bg-brand-navy text-base font-bold text-white hover:bg-brand-navy/90"
+          >
+            {saving ? "Đang lưu..." : "💾 Lưu cấu hình"}
+          </Button>
+        </div>
+
+        <div className="mt-5 rounded-xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="mb-2 font-bold text-brand-navy">📋 Mẫu tin nhắn đã cấu hình sẵn:</p>
+          <p className="mb-2">
+            <b>Cộng điểm:</b> "Kính chào anh/chị [Họ và Tên], Yến sào Trí Sơn thông báo bạn vừa được cộng +[Số điểm mới] điểm từ hóa đơn mua hàng ngày [Ngày giao dịch]. Tổng điểm hiện tại: [Tổng điểm] điểm (Hạng [Tên Hạng]). Ngày hết hạn thẻ: [Valid Through]. Cảm ơn bạn!"
+          </p>
+          <p>
+            <b>Đổi quà:</b> "Kính chào anh/chị [Họ và Tên], bạn đã đổi thành công phần quà [[Tên quà]] (Mã: [Mã sản phẩm]). Tài khoản thành viên Trí Sơn của bạn đã trừ -[Số điểm quà] điểm. Số điểm còn lại: [Tổng điểm] điểm. Cảm ơn bạn!"
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
