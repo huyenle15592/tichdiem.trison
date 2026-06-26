@@ -157,7 +157,7 @@ function CustomerView() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-6 md:py-10">
+      <main className="mx-auto max-w-2xl px-4 py-6 md:py-10 lg:max-w-5xl">
         {!customer && (
           <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
             <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
