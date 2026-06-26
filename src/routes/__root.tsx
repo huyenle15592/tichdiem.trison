@@ -83,6 +83,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Yến sào Trí Sơn - Tích điểm Thành viên" },
       { property: "og:description", content: "Hệ thống tích điểm tri ân khách hàng Yến sào Trí Sơn." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Yến sào Trí Sơn - Tích điểm Thành viên" },
+      { name: "twitter:description", content: "Hệ thống tích điểm tri ân khách hàng Yến sào Trí Sơn." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9e021dcc-54c0-4faf-b3dd-03608f27efd5/id-preview-043a7d51--d89730af-7e92-4b16-a8ff-d7b8993e43c1.lovable.app-1782452918337.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9e021dcc-54c0-4faf-b3dd-03608f27efd5/id-preview-043a7d51--d89730af-7e92-4b16-a8ff-d7b8993e43c1.lovable.app-1782452918337.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
