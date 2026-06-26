@@ -29,13 +29,17 @@ export const Route = createFileRoute("/khach-hang")({
 
 type Customer = { id: string; name: string; phone: string; points: number; created_at: string; activated_at: string | null };
 type Reward = { id: string; name: string; code: string | null; description: string | null; points_required: number; image_url: string | null };
+type RecentTx = { id: string; created_at: string; points_change: number; type: string; reason: string | null };
+
 
 function CustomerView() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [recentTx, setRecentTx] = useState<RecentTx[]>([]);
   const [searched, setSearched] = useState(false);
+
 
   async function lookupBy(raw: string) {
     const q = raw.trim();
@@ -55,6 +59,8 @@ function CustomerView() {
       }
       setCustomer(row);
       setRewards((result.rewards as Reward[]) ?? []);
+      setRecentTx((result.recentTransactions as RecentTx[]) ?? []);
+
       if (row) {
         setTimeout(() => {
           document.getElementById("member-card-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -144,15 +150,16 @@ function CustomerView() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => { setCustomer(null); setSearched(false); setQuery(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onClick={() => { setCustomer(null); setRecentTx([]); setSearched(false); setQuery(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="text-sm font-semibold text-brand-navy hover:bg-brand-navy/10"
               >
                 ← Tra cứu khách khác
               </Button>
             </div>
-            <MemberCard customer={customer} rewards={rewards} />
+            <MemberCard customer={customer} rewards={rewards} recentTx={recentTx} />
           </div>
         )}
+
       </main>
     </div>
   );
@@ -219,7 +226,7 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 };
 
 
-function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
+function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewards: Reward[]; recentTx: RecentTx[] }) {
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
   const qrRef = useRef<HTMLDivElement | null>(null);
@@ -443,6 +450,55 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
           Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
         </p>
       </div>
+
+      <div className="rounded-2xl border border-brand-red/20 bg-card/95 p-5 shadow-[var(--shadow-soft)]">
+        <h3
+          className="mb-3 text-base font-black text-brand-navy"
+          style={{ fontFamily: "'Montserrat', sans-serif" }}
+        >
+          🕒 LỊCH SỬ TÍCH ĐIỂM CỦA BẠN
+        </h3>
+        {recentTx.length === 0 ? (
+          <p className="text-sm italic text-muted-foreground">
+            Chưa có giao dịch nào được ghi nhận.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {recentTx.map((t) => {
+              const d = new Date(t.created_at);
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const yyyy = d.getFullYear();
+              const isAdd = t.points_change > 0;
+              const label = isAdd ? "Mua hàng" : "Đổi quà";
+              const sign = isAdd ? "+" : "";
+              return (
+                <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-brand-navy">
+                      Ngày {dd}/{mm}/{yyyy}: <span className="font-bold">{label}</span>
+                    </div>
+                    {t.reason && (
+                      <div className="truncate text-xs text-muted-foreground">{t.reason}</div>
+                    )}
+                  </div>
+                  <div
+                    className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${
+                      isAdd ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700"
+                    }`}
+                  >
+                    {sign}{t.points_change} điểm
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <p className="mt-3 text-xs italic text-muted-foreground">
+          Hiển thị 3 giao dịch gần nhất • Minh bạch 100%
+        </p>
+      </div>
+
 
       <div>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-brand-navy">

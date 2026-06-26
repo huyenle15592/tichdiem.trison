@@ -329,6 +329,10 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
 
       <main className="flex-1 overflow-x-hidden pt-14 md:pt-0">
 
+        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-8 md:pt-6">
+          <GlobalQuickSearch staff={staff} />
+        </div>
+
         <div className="mx-auto max-w-6xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
           {section === "customers" && <CustomersSection staff={staff} />}
@@ -344,6 +348,110 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
     </div>
   );
 }
+
+
+function GlobalQuickSearch({ staff }: { staff: string }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Customer[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setResults([]); setOpen(false); return; }
+    setLoading(true);
+    setOpen(true);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const digits = q.replace(/\D/g, "");
+      const filter = digits.length >= 2
+        ? `phone.ilike.%${digits}%,name.ilike.%${q}%`
+        : `name.ilike.%${q}%`;
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .or(filter)
+        .order("name")
+        .limit(8);
+      if (cancelled) return;
+      setResults((data as Customer[]) ?? []);
+      setLoading(false);
+    }, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
+  return (
+    <>
+      <div className="relative rounded-2xl border-2 border-brand-red/30 bg-card/95 p-3 shadow-[var(--shadow-soft)] backdrop-blur">
+        <div className="flex items-center gap-3">
+          <Search className="h-5 w-5 shrink-0 text-brand-red" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => { if (results.length) setOpen(true); }}
+            onBlur={() => setTimeout(() => setOpen(false), 200)}
+            placeholder="🔎 Tìm nhanh khách hàng theo SĐT hoặc Tên... (cộng điểm trong 2 giây)"
+            className="h-11 flex-1 rounded-xl border-0 bg-transparent text-base font-semibold focus-visible:ring-0"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(""); setResults([]); setOpen(false); }}
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
+              aria-label="Xoá"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {open && (
+          <div className="absolute inset-x-0 top-full z-40 mt-2 max-h-96 overflow-y-auto rounded-2xl border-2 border-brand-navy/15 bg-card shadow-[var(--shadow-card)]">
+            {loading && (
+              <div className="px-4 py-3 text-sm italic text-muted-foreground">Đang tìm...</div>
+            )}
+            {!loading && results.length === 0 && (
+              <div className="px-4 py-3 text-sm italic text-muted-foreground">
+                Không tìm thấy khách hàng phù hợp.
+              </div>
+            )}
+            {!loading && results.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setSelected(c); setOpen(false); setQuery(""); }}
+                className="flex w-full items-center justify-between gap-3 border-b border-border/50 px-4 py-3 text-left transition hover:bg-brand-red/5 last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-black text-brand-navy">{c.name}</div>
+                  <div className="font-mono text-xs text-muted-foreground">{c.phone}</div>
+                </div>
+                <div className="shrink-0 rounded-full bg-brand-red/10 px-3 py-1 text-sm font-black text-brand-red">
+                  {c.points} điểm
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <QuickAddPointsModal
+          customer={selected}
+          staff={staff}
+          onClose={() => setSelected(null)}
+          onSaved={() => { setSelected(null); toast.success("Đã cập nhật giao dịch"); }}
+        />
+      )}
+    </>
+  );
+}
+
+
+
+
 
 function Dashboard({ staff }: { staff: string }) {
   const [phone, setPhone] = useState("");
@@ -1970,10 +2078,36 @@ function QuickAddPointsModal({
   const [busy, setBusy] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeemBusy, setRedeemBusy] = useState(false);
+  const [codeStatus, setCodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [matchedReward, setMatchedReward] = useState<{ name: string; points_required: number } | null>(null);
   const points = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
   );
+
+  useEffect(() => {
+    const code = redeemCode.trim().toUpperCase();
+    if (!code) { setCodeStatus("idle"); setMatchedReward(null); return; }
+    setCodeStatus("checking");
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("rewards")
+        .select("name, points_required, active")
+        .ilike("code", code)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data && (data as any).active) {
+        setMatchedReward({ name: (data as any).name, points_required: (data as any).points_required });
+        setCodeStatus("valid");
+      } else {
+        setMatchedReward(null);
+        setCodeStatus("invalid");
+      }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [redeemCode]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -2137,22 +2271,41 @@ function QuickAddPointsModal({
             <Input
               value={redeemCode}
               onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); redeem(e); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && codeStatus === "valid") { e.preventDefault(); redeem(e); } }}
               placeholder="VD: TS-YEN-NHUY-HOA-70ML"
-              className="h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider"
+              className={`h-12 flex-1 rounded-xl border-2 font-mono text-base font-bold uppercase tracking-wider ${
+                codeStatus === "invalid" ? "border-red-500 bg-red-50" :
+                codeStatus === "valid" ? "border-success bg-success/5" : ""
+              }`}
             />
             <Button
               type="button"
               onClick={redeem}
-              disabled={redeemBusy || !redeemCode.trim()}
-              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110"
+              disabled={redeemBusy || codeStatus !== "valid"}
+              className="h-12 rounded-xl bg-success px-5 text-sm font-black text-success-foreground hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-white disabled:opacity-100"
             >
               {redeemBusy ? "Đang xử lý..." : "XÁC NHẬN ĐỔI QUÀ"}
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
-          </p>
+          {codeStatus === "invalid" && (
+            <p className="mt-2 text-sm font-bold text-red-600">
+              ⛔ Mã sản phẩm không hợp lệ, vui lòng kiểm tra lại!
+            </p>
+          )}
+          {codeStatus === "valid" && matchedReward && (
+            <p className="mt-2 text-sm font-bold text-success">
+              ✓ {matchedReward.name} — Trừ {matchedReward.points_required} điểm
+            </p>
+          )}
+          {codeStatus === "checking" && (
+            <p className="mt-2 text-xs italic text-muted-foreground">Đang kiểm tra mã...</p>
+          )}
+          {codeStatus === "idle" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Hệ thống tự tra mã trong kho quà, trừ điểm tương ứng và ghi lịch sử giao dịch.
+            </p>
+          )}
+
         </div>
       </form>
     </div>

@@ -99,12 +99,32 @@ export const getCustomerView = createServerFn({ method: "POST" })
       .eq("active", true)
       .order("points_required");
 
+    let recentTransactions: Array<{
+      id: string;
+      created_at: string;
+      points_change: number;
+      type: string;
+      reason: string | null;
+    }> = [];
+    if (row) {
+      const { data: txs } = await supabaseAdmin
+        .from("transactions")
+        .select("id, created_at, points_change, type, reason")
+        .eq("customer_id", row.id)
+        .in("type", ["add", "redeem"])
+        .order("created_at", { ascending: false })
+        .limit(3);
+      recentTransactions = (txs ?? []) as typeof recentTransactions;
+    }
+
     return {
       customer: row ? { id: row.id, name: row.name, phone: row.phone, points, created_at: row.created_at, activated_at } : null,
       rewards: rewards ?? [],
       expired,
+      recentTransactions,
     };
   });
+
 
 export const getTierSettings = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
