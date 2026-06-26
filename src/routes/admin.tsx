@@ -115,8 +115,8 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
         className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-[var(--shadow-card)]"
       >
         <div className="mb-6 text-center">
-          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red text-brand-red-foreground">
-            <Lock className="h-7 w-7" />
+          <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-[var(--shadow-soft)] ring-1 ring-border">
+            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-16 w-auto" />
           </div>
           <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
