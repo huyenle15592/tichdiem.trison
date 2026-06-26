@@ -30,7 +30,7 @@ import {
   Pencil,
   X,
 } from "lucide-react";
-import { formatVnd, getTier, normalizePhone } from "@/lib/loyalty";
+import { formatVnd, getTier, normalizePhone, formatVnDate, addOneYearIso } from "@/lib/loyalty";
 import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/admin")({
@@ -57,6 +57,12 @@ type Transaction = {
 
 const SHARED_PASSWORD = "Trison2026";
 const AUTH_KEY = "trison_admin_authed";
+
+function tierPillClass(key: "silver" | "gold" | "diamond"): string {
+  if (key === "diamond") return "bg-neutral-900 text-white";
+  if (key === "gold") return "bg-gradient-to-br from-amber-300 to-amber-600 text-amber-950";
+  return "bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900";
+}
 
 function AdminView() {
   const [authed, setAuthed] = useState(false);
@@ -398,8 +404,11 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
           <div className="text-xs font-bold uppercase text-muted-foreground">Khách hàng đang chọn</div>
           <div className="text-xl font-black text-brand-navy">{customer.name}</div>
           <div className="text-sm font-semibold text-muted-foreground">{customer.phone}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            Thẻ: {formatVnDate(customer.created_at)} → {formatVnDate(addOneYearIso(customer.created_at))}
+          </div>
         </div>
-        <div className="rounded-xl px-4 py-2 text-center" style={{ background: tier.gradient, color: tier.text }}>
+        <div className={`rounded-xl px-4 py-2 text-center ${tierPillClass(tier.key)}`}>
           <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">Hạng {tier.name}</div>
           <div className="text-2xl font-black leading-tight">{customer.points} đ</div>
         </div>
@@ -597,9 +606,12 @@ function CustomersSection() {
                       🎂 {formatBirth(c.birth_date)}
                     </div>
                   )}
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    Thẻ: {formatVnDate(c.created_at)} → <span className="font-semibold text-brand-navy">{formatVnDate(addOneYearIso(c.created_at))}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="hidden rounded-full px-3 py-1 text-xs font-bold sm:inline" style={{ background: tier.gradient, color: tier.text }}>
+                  <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${tierPillClass(tier.key)}`}>
                     {tier.name}
                   </span>
                   <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
@@ -937,6 +949,15 @@ function EditCustomerModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        <div className="mb-3 rounded-xl border bg-muted/40 p-3 text-xs">
+          <div className="font-bold text-brand-navy">Hạn sử dụng thẻ</div>
+          <div className="mt-1 flex flex-wrap gap-x-4 text-muted-foreground">
+            <span>Member Since: <span className="font-semibold text-foreground">{formatVnDate(customer.created_at)}</span></span>
+            <span>Valid Through: <span className="font-semibold text-brand-red">{formatVnDate(addOneYearIso(customer.created_at))}</span></span>
+          </div>
+        </div>
+
 
         <div className="space-y-3">
           <div>
