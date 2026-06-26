@@ -475,8 +475,16 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
                   {r.description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>}
                   <div className="mt-2 text-sm font-bold text-brand-navy">Cần {r.points_required} điểm</div>
                   {enough ? (
-                    <div className="mt-3 rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
-                      ✓ Đủ điểm đổi quà
+                    <div className="mt-3 space-y-2">
+                      <div className="rounded-xl bg-success px-3 py-2 text-center text-sm font-bold text-success-foreground">
+                        ✓ Đủ điểm đổi quà
+                      </div>
+                      {r.code && (
+                        <div className="rounded-xl border-2 border-dashed border-brand-red bg-brand-red/5 px-3 py-2 text-center">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mã đổi quà — đọc cho thu ngân</div>
+                          <div className="mt-0.5 font-mono text-base font-black text-brand-red">{r.code}</div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="mt-3 rounded-xl bg-muted px-3 py-2 text-center text-sm font-semibold text-muted-foreground">
