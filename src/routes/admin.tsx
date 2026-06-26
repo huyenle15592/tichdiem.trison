@@ -619,9 +619,18 @@ function CustomersSection() {
                       🎂 {formatBirth(c.birth_date)}
                     </div>
                   )}
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">
-                    Thẻ: {formatVnDate(c.created_at)} → <span className="font-semibold text-brand-navy">{formatVnDate(addOneYearIso(c.created_at))}</span>
-                  </div>
+                  {(() => {
+                    const w = cardWindow(activations[c.id]);
+                    return (
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {w.activated ? (
+                          <>Thẻ: {w.memberSince} → <span className="font-semibold text-brand-navy">{w.validThrough}</span></>
+                        ) : (
+                          <span className="italic">Thẻ: Chưa kích hoạt</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`hidden rounded-full px-3 py-1 text-xs font-bold sm:inline ${tierPillClass(tier.key)}`}>
