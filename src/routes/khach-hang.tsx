@@ -37,7 +37,7 @@ function CustomerView() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
+
 
   async function lookupBy(raw: string) {
     const q = raw.trim();
