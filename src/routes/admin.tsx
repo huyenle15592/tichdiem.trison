@@ -32,7 +32,8 @@ import {
 } from "lucide-react";
 import { formatVnd, getTier, normalizePhone, cardWindow } from "@/lib/loyalty";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
-import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
+import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import { LotusScene } from "@/components/lotus-scene";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -122,9 +123,13 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
         className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-[var(--shadow-card)]"
       >
         <div className="mb-6 text-center">
-          <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-4 py-2 shadow-[var(--shadow-soft)] ring-1 ring-border">
-            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-16 w-auto" />
-          </div>
+          <img
+            src={trisonLogo.url}
+            alt="Yến sào Trí Sơn"
+            className="mx-auto h-16 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+            style={{ mixBlendMode: "multiply" }}
+          />
+        </div>
           <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>

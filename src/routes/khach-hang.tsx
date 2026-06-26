@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, Sparkles, Gift, Phone, QrCode } from "lucide-react";
+import { Search, Gift, Phone, QrCode } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
 import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
-import trisonLogo from "@/assets/trison-logo.jpg.asset.json";
+import trisonLogo from "@/assets/trison-logo.png.asset.json";
+import { LotusScene } from "@/components/lotus-scene";
 import { QRCodeSVG } from "qrcode.react";
 
 export const Route = createFileRoute("/khach-hang")({
@@ -72,7 +73,8 @@ function CustomerView() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
+      <LotusScene />
       <Toaster position="top-center" richColors />
 
       <header
@@ -81,13 +83,12 @@ function CustomerView() {
       >
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
         <div className="relative mx-auto max-w-2xl px-5 py-8 text-center">
-          <div className="mx-auto inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 shadow-[var(--shadow-card)]">
-            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-16 w-auto md:h-20" />
-          </div>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5" /> Thành viên VIP
-          </div>
-          <h1 className="mt-3 text-3xl font-black leading-tight md:text-4xl">YẾN SÀO TRÍ SƠN</h1>
+          <img
+            src={trisonLogo.url}
+            alt="Yến sào Trí Sơn"
+            className="mx-auto h-16 w-auto md:h-20 drop-shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
+          />
+          <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">YẾN SÀO TRÍ SƠN</h1>
           <p className="mt-2 text-base font-medium text-white/95 md:text-lg">
             Hệ thống Tích điểm Thành viên Tri Ân Khách Hàng
           </p>
@@ -235,11 +236,12 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
           {/* Top: logo + tier name */}
           <div className="flex items-center gap-3">
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-xl p-1 shadow-sm md:h-14 md:w-14"
-              style={{ background: theme.logoBg }}
-            >
-              <img src={trisonLogo.url} alt="Trí Sơn" className="h-full w-full object-contain" />
+            <div className="flex h-12 w-12 items-center justify-center md:h-14 md:w-14">
+              <img
+                src={trisonLogo.url}
+                alt="Trí Sơn"
+                className="h-full w-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+              />
             </div>
             <div className="leading-tight">
               <div className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: theme.subtext, fontFamily: "'Times New Roman', serif" }}>
