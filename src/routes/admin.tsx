@@ -682,7 +682,8 @@ function CustomersSection({ staff }: { staff: string }) {
   const [q, setQ] = useState("");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newBirth, setNewBirth] = useState("");
+  const [newBirthDay, setNewBirthDay] = useState("");
+  const [newBirthMonth, setNewBirthMonth] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
   const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
   const [activations, setActivations] = useState<Record<string, string | null>>({});
