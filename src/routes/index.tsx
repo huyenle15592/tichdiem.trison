@@ -23,7 +23,7 @@ function PortalView() {
       <LotusScene />
       <header className="relative mx-auto max-w-6xl px-4 pt-6 pb-1 text-center sm:px-5 sm:pt-10 md:pt-14">
         <img
-          src={trisonLogo.url}
+          src={trisonLogo}
           alt="Yến sào Trí Sơn"
           className="mx-auto h-40 w-auto sm:h-48 md:h-56"
           style={{ mixBlendMode: "multiply" }}

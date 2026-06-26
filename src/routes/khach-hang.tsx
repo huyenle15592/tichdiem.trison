@@ -102,7 +102,7 @@ function CustomerView() {
 
         <div className="relative mx-auto max-w-2xl px-5 pt-10 pb-8 text-center md:pt-12">
           <img
-            src={trisonLogo.url}
+            src={trisonLogo}
             alt="Yến sào Trí Sơn"
             className="mx-auto h-16 w-auto md:h-20 drop-shadow-[0_6px_18px_rgba(0,0,0,0.25)]"
           />
@@ -300,7 +300,7 @@ function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewar
       >
         {/* Real lotus photo decoration — bottom-right, larger spread */}
         <img
-          src={lotusCardImg.url}
+          src={lotusCardImg}
           alt=""
           aria-hidden
           className="pointer-events-none absolute bottom-0 right-0 z-0 h-auto w-[55%] max-w-[280px] select-none object-contain"
@@ -317,7 +317,7 @@ function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewar
           <div className="relative flex items-center justify-center">
             <div className="absolute left-0 top-0 flex h-[4.5rem] w-[4.5rem] items-center justify-center md:h-[5.5rem] md:w-[5.5rem]">
               <img
-                src={trisonLogo.url}
+                src={trisonLogo}
                 alt="Trí Sơn"
                 className="h-full w-full object-contain"
                 style={{ filter: "none", boxShadow: "none", border: "none" }}

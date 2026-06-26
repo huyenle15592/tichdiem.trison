@@ -143,7 +143,7 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
       >
         <div className="mb-6 text-center">
           <img
-            src={trisonLogo.url}
+            src={trisonLogo}
             alt="Yến sào Trí Sơn"
             className="mx-auto h-16 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
             style={{ mixBlendMode: "multiply" }}
@@ -225,7 +225,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         <div className="border-b border-sidebar-border px-5 py-5">
           <div className="flex items-center gap-3">
             <img
-              src={trisonLogo.url}
+              src={trisonLogo}
               alt="Yến sào Trí Sơn"
               className="h-12 w-12 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
             />
@@ -279,7 +279,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
             <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground">
               <div className="border-b border-sidebar-border px-5 py-5">
                 <div className="flex items-center gap-3">
-                  <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-12 w-12 object-contain" />
+                  <img src={trisonLogo} alt="Yến sào Trí Sơn" className="h-12 w-12 object-contain" />
                   <div>
                     <div className="text-sm font-black leading-tight">YẾN SÀO</div>
                     <div className="text-xs font-bold leading-tight text-sidebar-foreground/70">TRÍ SƠN</div>
@@ -316,7 +316,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
             </SheetContent>
           </Sheet>
           <div className="flex items-center gap-2">
-            <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-8 w-8 object-contain" />
+            <img src={trisonLogo} alt="Yến sào Trí Sơn" className="h-8 w-8 object-contain" />
             <span className="text-sm font-black">
               {navItems.find((n) => n.id === section)?.label ?? "TRÍ SƠN"}
             </span>
