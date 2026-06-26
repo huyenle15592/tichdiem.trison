@@ -1438,6 +1438,42 @@ function ExpiringCardsSoon() {
           </table>
         </div>
       )}
+      {/* Mobile card list for expiring soon */}
+      {!loading && items.length > 0 && (
+        <ul className="mt-4 space-y-2 md:hidden">
+          {items.map((c) => {
+            const urgent = c.daysLeft <= 7;
+            return (
+              <li key={c.id} className="space-y-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-soft)]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate font-black text-brand-navy">{c.name}</div>
+                    <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
+                  </div>
+                  <span className="shrink-0 rounded-full px-2.5 py-1 text-xs font-black text-white" style={{ background: urgent ? "#dc2626" : "#d97706" }}>
+                    {c.daysLeft === 0 ? "Hết hôm nay" : `${c.daysLeft} ngày`}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <span className="font-bold text-foreground">{c.points} điểm</span>
+                  <span className="text-muted-foreground">Hết hạn: {fmt(c.validThrough)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => copyPhone(c.phone)} size="sm" variant="outline" className="h-10 flex-1 rounded-lg text-xs font-bold">
+                    <Copy className="mr-1 h-4 w-4" /> Copy SĐT
+                  </Button>
+                  <a href={`tel:${c.phone}`} className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-brand-navy px-2.5 text-xs font-bold text-brand-navy-foreground">
+                    <Phone className="h-4 w-4" /> Gọi
+                  </a>
+                  <a href={`https://zalo.me/${c.phone}`} target="_blank" rel="noreferrer" className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-lg bg-[#0068ff] px-2.5 text-xs font-bold text-white">
+                    <MessageCircle className="h-4 w-4" /> Zalo
+                  </a>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
