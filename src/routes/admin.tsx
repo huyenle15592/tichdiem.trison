@@ -685,6 +685,15 @@ function CustomersSection({ staff }: { staff: string }) {
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+      {quickAdd && (
+        <QuickAddPointsModal
+          customer={quickAdd}
+          staff={staff}
+          onClose={() => setQuickAdd(null)}
+          onSaved={() => { setQuickAdd(null); load(); }}
+        />
+      )}
+
     </div>
   );
 }
