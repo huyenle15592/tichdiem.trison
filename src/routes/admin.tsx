@@ -42,7 +42,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminView,
 });
 
-type Customer = { id: string; name: string; phone: string; points: number; created_at: string };
+type Customer = { id: string; name: string; phone: string; points: number; created_at: string; birth_date: string | null };
 type Transaction = {
   id: string;
   customer_id: string;
