@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as KhachHangRouteImport } from './routes/khach-hang'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiProxyRestV1SplatRouteImport } from './routes/api/proxy/rest/v1/$'
 
 const KhachHangRoute = KhachHangRouteImport.update({
   id: '/khach-hang',
@@ -28,35 +29,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProxyRestV1SplatRoute = ApiProxyRestV1SplatRouteImport.update({
+  id: '/api/proxy/rest/v1/$',
+  path: '/api/proxy/rest/v1/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/khach-hang': typeof KhachHangRoute
+  '/api/proxy/rest/v1/$': typeof ApiProxyRestV1SplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/khach-hang': typeof KhachHangRoute
+  '/api/proxy/rest/v1/$': typeof ApiProxyRestV1SplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/khach-hang': typeof KhachHangRoute
+  '/api/proxy/rest/v1/$': typeof ApiProxyRestV1SplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/khach-hang'
+  fullPaths: '/' | '/admin' | '/khach-hang' | '/api/proxy/rest/v1/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/khach-hang'
-  id: '__root__' | '/' | '/admin' | '/khach-hang'
+  to: '/' | '/admin' | '/khach-hang' | '/api/proxy/rest/v1/$'
+  id: '__root__' | '/' | '/admin' | '/khach-hang' | '/api/proxy/rest/v1/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   KhachHangRoute: typeof KhachHangRoute
+  ApiProxyRestV1SplatRoute: typeof ApiProxyRestV1SplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/proxy/rest/v1/$': {
+      id: '/api/proxy/rest/v1/$'
+      path: '/api/proxy/rest/v1/$'
+      fullPath: '/api/proxy/rest/v1/$'
+      preLoaderRoute: typeof ApiProxyRestV1SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   KhachHangRoute: KhachHangRoute,
+  ApiProxyRestV1SplatRoute: ApiProxyRestV1SplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

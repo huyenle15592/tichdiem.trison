@@ -1,12 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Search, Gift, Phone, Download, ScrollText, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { getTier, formatVnd, normalizePhone, cardWindow } from "@/lib/loyalty";
-import { LotusBg } from "@/components/lotus-bg";
+import { getTier, formatVnd, cardWindow } from "@/lib/loyalty";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -16,8 +14,7 @@ import { LotusScene } from "@/components/lotus-scene";
 import lotusCardImg from "@/assets/lotus-card.png.asset.json";
 import { QRCodeSVG } from "qrcode.react";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
-import { autoExpireCustomer } from "@/lib/expiry";
-import { fetchActivationDate } from "@/lib/activation";
+import { getCustomerView } from "@/lib/public-data.functions";
 
 
 export const Route = createFileRoute("/khach-hang")({
@@ -40,38 +37,6 @@ function CustomerView() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
 
-  // Realtime: làm mới danh sách quà khi admin chỉnh sửa
-  useEffect(() => {
-    if (!customer) return;
-    const channel = supabase
-      .channel("rewards-customer")
-      .on("postgres_changes", { event: "*", schema: "public", table: "rewards" }, async () => {
-        const { data } = await supabase.from("rewards").select("*").eq("active", true).order("points_required");
-        setRewards((data as Reward[]) ?? []);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [customer]);
-
-  // Realtime: lắng nghe thay đổi điểm của chính khách hàng (đổi quà, cộng điểm)
-  useEffect(() => {
-    if (!customer) return;
-    const channel = supabase
-      .channel(`customer-${customer.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "customers", filter: `id=eq.${customer.id}` },
-        (payload) => {
-          const next = payload.new as { points: number; name: string; phone: string };
-          setCustomer((prev) => (prev ? { ...prev, points: next.points, name: next.name, phone: next.phone } : prev));
-        },
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [customer?.id]);
-
-
-
   async function lookupBy(raw: string) {
     const q = raw.trim();
     if (q.length < 2) {
@@ -81,40 +46,16 @@ function CustomerView() {
     setLoading(true);
     setSearched(true);
     try {
-      const digits = q.replace(/\D/g, "");
-      const phoneCandidate = digits.length >= 8 ? normalizePhone(q) : null;
-
-      // Build OR filter: match phone OR name (case-insensitive contains)
-      const safe = q.replace(/[,()]/g, " ");
-      const orParts: string[] = [`name.ilike.%${safe}%`];
-      if (phoneCandidate) orParts.unshift(`phone.eq.${phoneCandidate}`);
-
-      const [{ data: custRows, error: custErr }, { data: rws }] = await Promise.all([
-        supabase
-          .from("customers")
-          .select("id, name, phone, points, created_at")
-          .or(orParts.join(","))
-          .limit(1),
-        supabase.from("rewards").select("*").eq("active", true).order("points_required"),
-      ]);
-      if (custErr) throw custErr;
-
-      const row = (custRows && custRows[0]) || null;
-      let cust: Customer | null = null;
-      if (row) {
-        // Auto-expire nếu thẻ đã quá hạn 1 năm
-        const exp = await autoExpireCustomer({ id: row.id, points: row.points });
-        const activatedAt = exp.expired ? null : await fetchActivationDate(row.id);
-        if (exp.expired) {
-          toast.message("Thẻ thành viên đã hết hạn chu kỳ 1 năm và được kích hoạt lại.", {
-            description: "Số điểm đã đặt về 0. Hãy tích điểm để bắt đầu chu kỳ mới.",
-          });
-        }
-        cust = { ...(row as any), points: exp.points, activated_at: activatedAt };
+      const result = await getCustomerView({ data: { query: q } });
+      const row = result.customer;
+      if (row && result.expired) {
+        toast.message("Thẻ thành viên đã hết hạn chu kỳ 1 năm và được kích hoạt lại.", {
+          description: "Số điểm đã đặt về 0. Hãy tích điểm để bắt đầu chu kỳ mới.",
+        });
       }
-      setCustomer(cust);
-      setRewards((rws as Reward[]) ?? []);
-      if (cust) {
+      setCustomer(row);
+      setRewards((result.rewards as Reward[]) ?? []);
+      if (row) {
         setTimeout(() => {
           document.getElementById("member-card-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 80);

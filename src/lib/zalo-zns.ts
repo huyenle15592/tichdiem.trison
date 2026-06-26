@@ -1,7 +1,7 @@
 // Zalo ZNS (Zalo Notification Service) integration scaffolding.
 // Khung kết nối sẵn — chỉ thực sự gửi tin khi `enabled = true` và đã điền
 // Access Token + Template ID trong "Cấu hình hệ thống" (Admin).
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/admin-db";
 import { cardWindow, getTier, type TierThresholds, DEFAULT_THRESHOLDS } from "@/lib/loyalty";
 import { fetchActivationDate } from "@/lib/activation";
 
