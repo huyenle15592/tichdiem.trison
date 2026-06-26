@@ -354,7 +354,8 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
               <img
                 src={trisonLogo.url}
                 alt="Trí Sơn"
-                className="h-full w-full object-contain drop-shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
+                className="h-full w-full object-contain"
+                style={{ filter: "none", boxShadow: "none", border: "none" }}
               />
             </div>
             <div className="leading-tight">
