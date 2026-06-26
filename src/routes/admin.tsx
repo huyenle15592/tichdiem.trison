@@ -796,7 +796,7 @@ function HistorySection() {
 }
 
 
-type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean; image_url: string | null };
+
 
 type Reward = { id: string; name: string; code: string | null; description: string | null; points_required: number; active: boolean; image_url: string | null };
 
