@@ -31,7 +31,11 @@ import {
   X,
   Crown,
   Save,
+  Undo2,
+  ShieldAlert,
 } from "lucide-react";
+
+const MANAGER_PASSWORD = "TrisonAdmin2026";
 import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
 import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
@@ -364,7 +368,7 @@ function Dashboard({ staff }: { staff: string }) {
 
       <div>
         <h2 className="mb-3 text-lg font-black text-brand-navy">Giao dịch hôm nay (Real-time)</h2>
-        <TransactionList items={todayTx} />
+        <TransactionList items={todayTx} allowVoid onVoided={loadStats} />
       </div>
     </div>
   );
@@ -476,8 +480,9 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
   );
 }
 
-function TransactionList({ items }: { items: Transaction[] }) {
+function TransactionList({ items, allowVoid, onVoided }: { items: Transaction[]; allowVoid?: boolean; onVoided?: () => void }) {
   const [names, setNames] = useState<Record<string, { name: string; phone: string }>>({});
+  const [voiding, setVoiding] = useState<string | null>(null);
 
   useEffect(() => {
     const ids = Array.from(new Set(items.map((i) => i.customer_id))).filter((id) => !names[id]);
@@ -491,6 +496,26 @@ function TransactionList({ items }: { items: Transaction[] }) {
     });
   }, [items]);
 
+  async function voidTx(t: Transaction) {
+    if (!confirm("Bạn có chắc chắn muốn hủy giao dịch nhập sai này không?\nĐiểm của khách sẽ được hoàn trả về trạng thái cũ.")) return;
+    setVoiding(t.id);
+    // Refresh customer to get latest points
+    const { data: cust } = await supabase.from("customers").select("points").eq("id", t.customer_id).maybeSingle();
+    if (!cust) { toast.error("Không tìm thấy khách"); setVoiding(null); return; }
+    const reverted = (cust as any).points - t.points_change;
+    if (reverted < 0) { toast.error("Không thể hoàn: điểm khách đã không còn đủ"); setVoiding(null); return; }
+    const { error: e1 } = await supabase.from("customers").update({ points: reverted }).eq("id", t.customer_id);
+    if (e1) { toast.error(e1.message); setVoiding(null); return; }
+    const { error: e2 } = await supabase
+      .from("transactions")
+      .update({ type: "void", reason: "[ĐÃ HỦY DO NHẬP SAI] " + (t.reason || "") })
+      .eq("id", t.id);
+    if (e2) { toast.error(e2.message); setVoiding(null); return; }
+    toast.success(`Đã hoàn ${Math.abs(t.points_change)} điểm`);
+    setVoiding(null);
+    onVoided?.();
+  }
+
   if (items.length === 0)
     return <div className="rounded-2xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">Chưa có giao dịch nào.</div>;
 
@@ -502,23 +527,45 @@ function TransactionList({ items }: { items: Transaction[] }) {
           const time = new Date(t.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
           const masked = c ? `${c.phone.slice(0, 4)}xxxxxx` : "...";
           const positive = t.points_change > 0;
+          const voided = t.type === "void";
+          const canVoid = allowVoid && !voided && t.type !== "adjust";
           return (
-            <li key={t.id} className="flex items-center justify-between gap-3 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full font-mono text-xs font-bold text-muted-foreground" style={{ background: "var(--muted)" }}>
+            <li key={t.id} className={`flex items-center justify-between gap-3 p-4 ${voided ? "bg-muted/40" : ""}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold text-muted-foreground" style={{ background: "var(--muted)" }}>
                   {time}
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-foreground">
+                <div className="min-w-0">
+                  <div className={`text-sm font-bold ${voided ? "text-muted-foreground line-through" : "text-foreground"}`}>
                     {c?.name ?? "Khách"} <span className="font-mono text-xs text-muted-foreground">({masked})</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground truncate">
                     {t.reason || "—"} • Bởi {t.staff_name || "?"}
                   </div>
+                  {voided && (
+                    <div className="mt-0.5 inline-block rounded-full bg-brand-red/10 px-2 py-0.5 text-[10px] font-black uppercase text-brand-red">
+                      Đã hủy do nhập sai
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className={`text-lg font-black ${positive ? "text-success" : "text-brand-red"}`}>
-                {positive ? "+" : ""}{t.points_change}
+              <div className="flex items-center gap-2">
+                <div className={`text-lg font-black ${voided ? "text-muted-foreground line-through" : positive ? "text-success" : "text-brand-red"}`}>
+                  {positive ? "+" : ""}{t.points_change}
+                </div>
+                {canVoid && (
+                  <Button
+                    onClick={() => voidTx(t)}
+                    disabled={voiding === t.id}
+                    size="sm"
+                    variant="ghost"
+                    title="Hủy lệnh / Hoàn điểm"
+                    className="h-9 rounded-lg border border-brand-red/30 px-2 text-xs font-black text-brand-red hover:bg-brand-red hover:text-brand-red-foreground"
+                  >
+                    <Undo2 className="mr-1 h-3.5 w-3.5" />
+                    {voiding === t.id ? "..." : "Hủy"}
+                  </Button>
+                )}
               </div>
             </li>
           );
@@ -678,23 +725,25 @@ function CustomersSection({ staff }: { staff: string }) {
 
 function HistorySection() {
   const [items, setItems] = useState<Transaction[]>([]);
+  async function reload() {
+    const { data } = await supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(200);
+    setItems((data as Transaction[]) ?? []);
+  }
   useEffect(() => {
-    supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(200).then(({ data }) => {
-      setItems((data as Transaction[]) ?? []);
-    });
+    reload();
     const ch = supabase.channel("hist")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, (p) => {
-        setItems((prev) => [p.new as Transaction, ...prev]);
-      }).subscribe();
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => reload())
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Lịch sử giao dịch</h1>
-      <TransactionList items={items} />
+      <TransactionList items={items} allowVoid onVoided={reload} />
     </div>
   );
 }
+
 
 type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean; image_url: string | null };
 
@@ -951,6 +1000,12 @@ function EditCustomerModal({
   const [busy, setBusy] = useState(false);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
 
+  // Manager-only direct points edit
+  const [mgrOpen, setMgrOpen] = useState(false);
+  const [mgrUnlocked, setMgrUnlocked] = useState(false);
+  const [mgrPwd, setMgrPwd] = useState("");
+  const [directPoints, setDirectPoints] = useState(String(customer.points));
+
   const addPoints = useMemo(
     () => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000),
     [amount],
@@ -964,24 +1019,39 @@ function EditCustomerModal({
 
   const win = cardWindow(activatedAt);
 
+  function tryUnlock() {
+    if (mgrPwd === MANAGER_PASSWORD) {
+      setMgrUnlocked(true);
+      toast.success("Đã mở khóa quyền Quản lý");
+    } else {
+      toast.error("Sai mật khẩu Quản lý");
+    }
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const p = normalizePhone(phone);
     if (!name.trim() || p.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
     setBusy(true);
-    const newPoints = customer.points + addPoints;
+
+    // Compute final points: start from current, apply add, then manager override (if unlocked & changed)
+    let finalPoints = customer.points + addPoints;
+    const directVal = Number(directPoints);
+    const directChanged = mgrUnlocked && Number.isFinite(directVal) && directVal >= 0 && directVal !== customer.points;
+    if (directChanged) finalPoints = directVal;
+
     const { error } = await supabase
       .from("customers")
       .update({
         name: name.trim(),
         phone: p,
         birth_date: birth || null,
-        points: newPoints,
+        points: finalPoints,
       })
       .eq("id", customer.id);
     if (error) { setBusy(false); toast.error(error.message); return; }
 
-    if (addPoints > 0) {
+    if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
       const { error: e2 } = await supabase.from("transactions").insert({
         customer_id: customer.id,
@@ -994,10 +1064,30 @@ function EditCustomerModal({
       if (e2) { setBusy(false); toast.error(e2.message); return; }
     }
 
+    if (directChanged) {
+      const delta = directVal - customer.points;
+      const { error: e3 } = await supabase.from("transactions").insert({
+        customer_id: customer.id,
+        points_change: delta,
+        amount: null,
+        reason: `[ĐIỀU CHỈNH BỞI QUẢN LÝ] ${customer.points} → ${directVal} điểm` + (reason.trim() ? ` • ${reason.trim()}` : ""),
+        staff_name: staff,
+        type: "adjust",
+      });
+      if (e3) { setBusy(false); toast.error(e3.message); return; }
+    }
+
     setBusy(false);
-    toast.success(addPoints > 0 ? `Đã cập nhật & cộng +${addPoints} điểm` : "Đã cập nhật khách hàng");
+    toast.success(
+      directChanged
+        ? `Đã điều chỉnh trực tiếp về ${directVal} điểm`
+        : addPoints > 0
+        ? `Đã cập nhật & cộng +${addPoints} điểm`
+        : "Đã cập nhật khách hàng",
+    );
     onSaved();
   }
+
 
   async function remove() {
     if (!confirm(`Xoá khách hàng ${customer.name}? Lịch sử giao dịch liên quan sẽ vẫn còn.`)) return;
@@ -1079,7 +1169,74 @@ function EditCustomerModal({
               </div>
             )}
           </div>
+
+          {/* Manager-only direct points edit */}
+          <div className="rounded-xl border-2 border-dashed border-brand-navy/30 bg-brand-navy/5 p-3">
+            <button
+              type="button"
+              onClick={() => setMgrOpen((s) => !s)}
+              className="flex w-full items-center justify-between gap-2 text-left"
+            >
+              <span className="flex items-center gap-2 text-sm font-black text-brand-navy">
+                <ShieldAlert className="h-4 w-4" />
+                Chỉnh sửa số điểm trực tiếp (Chỉ dành cho Quản lý)
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">{mgrOpen ? "Đóng" : "Mở"}</span>
+            </button>
+
+            {mgrOpen && (
+              <div className="mt-3 space-y-3">
+                {!mgrUnlocked ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-muted-foreground">
+                      Mật khẩu Quản lý để mở khóa
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        value={mgrPwd}
+                        onChange={(e) => setMgrPwd(e.target.value)}
+                        placeholder="Nhập mật khẩu cấp cao…"
+                        className="h-11 rounded-xl border-2"
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); tryUnlock(); } }}
+                      />
+                      <Button type="button" onClick={tryUnlock} className="h-11 rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">
+                        Mở khóa
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tính năng này cho phép sửa trực tiếp số điểm khách (ví dụ từ 15 → 12) — chỉ dùng khi cần sửa sai đặc biệt.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs font-black uppercase text-brand-navy">
+                      ✔ Đã mở khóa — Số điểm trực tiếp
+                    </Label>
+                    <Input
+                      inputMode="numeric"
+                      value={directPoints}
+                      onChange={(e) => setDirectPoints(e.target.value.replace(/[^0-9]/g, ""))}
+                      className="mt-1 h-14 rounded-xl border-2 border-brand-navy text-2xl font-black text-brand-navy"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Hiện tại: <span className="font-bold">{customer.points} điểm</span>. Khi lưu, hệ thống sẽ
+                      ghi nhận một bản ghi <span className="font-bold text-brand-navy">"Điều chỉnh bởi Quản lý"</span>
+                      {" "}vào lịch sử.
+                    </p>
+                    {Number(directPoints) !== customer.points && Number.isFinite(Number(directPoints)) && (
+                      <p className="mt-1 text-xs font-bold text-brand-red">
+                        Sẽ chỉnh: {customer.points} → {Number(directPoints)} điểm
+                        {addPoints > 0 && " (ô số tiền hóa đơn sẽ bị bỏ qua)"}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+
 
         <div className="mt-5 flex gap-2">
           <Button type="button" onClick={remove} variant="ghost" className="text-brand-red">Xoá</Button>
