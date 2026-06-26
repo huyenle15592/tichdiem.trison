@@ -25,7 +25,7 @@ function PortalView() {
         <img
           src={trisonLogo.url}
           alt="Yến sào Trí Sơn"
-          className="mx-auto h-28 w-auto sm:h-40 md:h-56"
+          className="mx-auto h-40 w-auto sm:h-48 md:h-56"
           style={{ mixBlendMode: "multiply" }}
         />
         <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight text-brand-navy sm:mt-3 sm:text-4xl md:mt-4 md:text-6xl">
