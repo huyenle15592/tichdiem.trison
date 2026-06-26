@@ -59,6 +59,8 @@ function CustomerView() {
       }
       setCustomer(row);
       setRewards((result.rewards as Reward[]) ?? []);
+      setRecentTx((result.recentTransactions as RecentTx[]) ?? []);
+
       if (row) {
         setTimeout(() => {
           document.getElementById("member-card-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
