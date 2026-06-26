@@ -187,7 +187,7 @@ function LoginGate({ onSuccess }: { onSuccess: () => void }) {
 
 
 
-type Section = "dashboard" | "customers" | "history" | "rewards" | "tiers";
+type Section = "dashboard" | "customers" | "tier-members" | "history" | "rewards" | "tiers";
 
 function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<Section>("dashboard");
@@ -198,10 +198,12 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
   const navItems: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
     { id: "dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
     { id: "customers", label: "Danh sách khách hàng", icon: Users },
+    { id: "tier-members", label: "Quản lý hạng thành viên", icon: Crown },
     { id: "history", label: "Lịch sử giao dịch", icon: History },
     { id: "rewards", label: "Cài đặt quà tặng", icon: Gift },
-    { id: "tiers", label: "Cài đặt hạng tích điểm", icon: Crown },
+    { id: "tiers", label: "Cài đặt hạng tích điểm", icon: Sparkles },
   ];
+
 
 
   return (
@@ -290,9 +292,11 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         <div className="mx-auto max-w-5xl px-4 py-4 md:px-8 md:py-8">
           {section === "dashboard" && <Dashboard staff={staff} />}
           {section === "customers" && <CustomersSection staff={staff} />}
+          {section === "tier-members" && <TierMembersSection staff={staff} />}
           {section === "history" && <HistorySection />}
           {section === "rewards" && <RewardsSection />}
           {section === "tiers" && <TierSettingsSection />}
+
 
         </div>
       </main>
@@ -1553,3 +1557,200 @@ function TierSettingsSection() {
 }
 
 
+
+type CustomerSpend = Customer & { totalSpend: number };
+
+function TierMembersSection({ staff }: { staff: string }) {
+  const thresholds = useTierThresholds();
+  const [items, setItems] = useState<CustomerSpend[]>([]);
+  const [activeTier, setActiveTier] = useState<"silver" | "gold" | "diamond">("gold");
+  const [loading, setLoading] = useState(true);
+  const [quickAdd, setQuickAdd] = useState<Customer | null>(null);
+  const [detail, setDetail] = useState<Customer | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const [{ data: custs }, { data: txs }] = await Promise.all([
+      supabase.from("customers").select("*").order("points", { ascending: false }),
+      supabase.from("transactions").select("customer_id,amount,type"),
+    ]);
+    const spendMap = new Map<string, number>();
+    ((txs as { customer_id: string; amount: number | null; type: string }[]) ?? []).forEach((t) => {
+      if (t.type === "add" && t.amount) {
+        spendMap.set(t.customer_id, (spendMap.get(t.customer_id) ?? 0) + Number(t.amount));
+      }
+    });
+    const list = ((custs as Customer[]) ?? []).map((c) => ({ ...c, totalSpend: spendMap.get(c.id) ?? 0 }));
+    setItems(list);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("tier-members")
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  const grouped = useMemo(() => {
+    const g = { silver: [] as CustomerSpend[], gold: [] as CustomerSpend[], diamond: [] as CustomerSpend[] };
+    items.forEach((c) => { g[getTier(c.points, thresholds).key].push(c); });
+    return g;
+  }, [items, thresholds]);
+
+  const filtered = grouped[activeTier];
+
+  const tierCards: { key: "silver" | "gold" | "diamond"; name: string; gradient: string; ring: string; textClass: string }[] = [
+    { key: "silver", name: "HẠNG BẠC", gradient: "from-slate-100 to-slate-300", ring: "ring-slate-400", textClass: "text-slate-800" },
+    { key: "gold", name: "HẠNG VÀNG", gradient: "from-amber-200 to-amber-500", ring: "ring-amber-500", textClass: "text-amber-950" },
+    { key: "diamond", name: "HẠNG KIM CƯƠNG", gradient: "from-neutral-800 to-neutral-950", ring: "ring-neutral-900", textClass: "text-amber-100" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Quản lý hạng thành viên</h1>
+        <p className="text-sm text-muted-foreground">Tổng quan số lượng khách theo từng hạng và tổng doanh thu từng khách hàng.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {tierCards.map((t) => {
+          const count = grouped[t.key].length;
+          const active = activeTier === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTier(t.key)}
+              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${t.gradient} p-5 text-left shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] ${active ? `ring-4 ${t.ring}` : "ring-1 ring-black/5"}`}
+            >
+              <div className={`text-xs font-bold tracking-[0.18em] ${t.textClass} opacity-80`}>HẠNG THÀNH VIÊN</div>
+              <div className={`mt-1 font-serif text-2xl font-black ${t.textClass}`} style={{ fontFamily: "'Times New Roman', serif" }}>
+                {t.name}
+              </div>
+              <div className="mt-4 flex items-end justify-between">
+                <div>
+                  <div className={`text-5xl font-black leading-none ${t.textClass}`}>{count}</div>
+                  <div className={`mt-1 text-xs font-bold ${t.textClass} opacity-80`}>Khách hàng</div>
+                </div>
+                <Crown className={`h-10 w-10 ${t.textClass} opacity-40 transition group-hover:opacity-70`} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="rounded-2xl border bg-card shadow-[var(--shadow-soft)]">
+        <div className="flex items-center justify-between border-b p-4">
+          <h2 className="text-lg font-black text-brand-navy">
+            Danh sách {tierCards.find((c) => c.key === activeTier)?.name} ({filtered.length})
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-left font-bold">Họ và Tên</th>
+                <th className="px-4 py-3 text-left font-bold">Số điện thoại</th>
+                <th className="px-4 py-3 text-left font-bold">Hạng hiện tại</th>
+                <th className="px-4 py-3 text-right font-bold">Tổng tiền đã mua (VNĐ)</th>
+                <th className="px-4 py-3 text-right font-bold">Số điểm hiện có</th>
+                <th className="px-4 py-3 text-right font-bold">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {loading && (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Đang tải dữ liệu…</td></tr>
+              )}
+              {!loading && filtered.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Chưa có khách hàng nào ở hạng này.</td></tr>
+              )}
+              {filtered.map((c) => {
+                const tier = getTier(c.points, thresholds);
+                return (
+                  <tr key={c.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setQuickAdd(c)}
+                        className="font-bold text-brand-navy hover:text-brand-red hover:underline"
+                      >
+                        {c.name}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{c.phone}</td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${tierPillClass(tier.key)}`}>{tier.name}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-black text-brand-navy">
+                      {formatVnd(c.totalSpend)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-base font-black text-brand-red">{c.points}</span>
+                      <span className="ml-1 text-xs font-bold text-muted-foreground">điểm</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button onClick={() => setDetail(c)} size="sm" variant="ghost" className="h-9 rounded-xl text-xs font-bold text-brand-navy">
+                          <History className="mr-1 h-4 w-4" /> Lịch sử
+                        </Button>
+                        <Button onClick={() => setQuickAdd(c)} size="sm" className="h-9 rounded-xl bg-brand-red px-3 text-xs font-black text-brand-red-foreground hover:bg-brand-red/90">
+                          <Plus className="mr-1 h-4 w-4" /> Cộng điểm
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {quickAdd && (
+        <QuickAddPointsModal
+          customer={quickAdd}
+          staff={staff}
+          onClose={() => setQuickAdd(null)}
+          onSaved={() => { setQuickAdd(null); load(); }}
+        />
+      )}
+
+      {detail && (
+        <CustomerHistoryModal customer={detail} onClose={() => setDetail(null)} />
+      )}
+    </div>
+  );
+}
+
+function CustomerHistoryModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+  const [items, setItems] = useState<Transaction[]>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending: false });
+      setItems((data as Transaction[]) ?? []);
+    })();
+  }, [customer.id]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-t-2xl bg-card shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b bg-brand-navy px-5 py-4 text-brand-navy-foreground">
+          <div>
+            <div className="text-xs font-bold uppercase opacity-80">Lịch sử mua hàng</div>
+            <div className="text-lg font-black">{customer.name} · {customer.phone}</div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-white/10"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto p-4">
+          <TransactionList items={items} />
+        </div>
+      </div>
+    </div>
+  );
+}
