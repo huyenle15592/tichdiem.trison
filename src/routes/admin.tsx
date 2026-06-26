@@ -41,6 +41,8 @@ import { useTierThresholds } from "@/lib/use-tier-thresholds";
 import { fetchActivationDate, fetchActivationDates } from "@/lib/activation";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
+import { QrScannerModal } from "@/components/qr-scanner";
+import { Camera } from "lucide-react";
 
 
 export const Route = createFileRoute("/admin")({
