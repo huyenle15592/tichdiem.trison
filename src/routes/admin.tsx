@@ -1341,7 +1341,7 @@ function BirthdaysThisMonth() {
                   <div className="truncate font-black text-brand-navy">{c.name}</div>
                   <div className="font-mono text-sm text-muted-foreground">{c.phone}</div>
                   <div className="mt-1 text-xs font-bold text-brand-red">
-                    🎂 Sinh ngày {formatBirth(c.birth_date!)}
+                    🎂 Sinh ngày {formatBirth(c)}
                   </div>
                 </div>
               </div>
