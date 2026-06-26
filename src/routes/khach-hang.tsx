@@ -14,6 +14,8 @@ import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QRCodeSVG } from "qrcode.react";
+import { useTierThresholds } from "@/lib/use-tier-thresholds";
+
 
 export const Route = createFileRoute("/khach-hang")({
   head: () => ({
