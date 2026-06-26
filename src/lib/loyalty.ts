@@ -46,3 +46,24 @@ export function addOneYearIso(iso: string | null | undefined): string | null {
   d.setFullYear(d.getFullYear() + 1);
   return d.toISOString();
 }
+
+export type CardWindow = {
+  activated: boolean;
+  memberSince: string;
+  validThrough: string;
+};
+
+export function cardWindow(activatedAt: string | null | undefined): CardWindow {
+  if (!activatedAt) {
+    return {
+      activated: false,
+      memberSince: "Chưa kích hoạt",
+      validThrough: "Kích hoạt sau lần tích điểm đầu tiên",
+    };
+  }
+  return {
+    activated: true,
+    memberSince: formatVnDate(activatedAt),
+    validThrough: formatVnDate(addOneYearIso(activatedAt)),
+  };
+}
