@@ -1099,6 +1099,124 @@ function BirthdaysThisMonth() {
   );
 }
 
+function ExpiringCardsSoon() {
+  const [items, setItems] = useState<ExpiringSoon[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const list = await fetchExpiringSoon(30);
+    setItems(list);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel("expiring-soon")
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  async function copyPhone(phone: string) {
+    try {
+      await navigator.clipboard.writeText(phone);
+      toast.success(`Đã sao chép ${phone}`);
+    } catch {
+      toast.error("Không thể sao chép");
+    }
+  }
+
+  function fmt(iso: string) {
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  }
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border-2 p-5 shadow-[var(--shadow-card)]"
+      style={{
+        borderColor: "#d97706",
+        background:
+          "linear-gradient(135deg, oklch(0.98 0.04 80) 0%, oklch(0.96 0.06 60) 100%)",
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-lg font-black md:text-xl" style={{ color: "#b45309" }}>
+          <AlertTriangle className="h-6 w-6" />
+          ⚠️ CẢNH BÁO: KHÁCH HÀNG SẮP HẾT HẠN THẺ (TRONG 30 NGÀY)
+        </h2>
+        <span className="rounded-full px-3 py-1 text-xs font-black text-white" style={{ background: "#b45309" }}>
+          {items.length} khách
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 text-sm text-muted-foreground">Đang tải...</div>
+      ) : items.length === 0 ? (
+        <div className="mt-4 rounded-xl bg-white/60 p-6 text-center text-sm font-semibold text-muted-foreground">
+          Không có khách nào sắp hết hạn thẻ trong 30 ngày tới.
+        </div>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border bg-card">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Họ tên</th>
+                <th className="px-3 py-2 text-left">SĐT</th>
+                <th className="px-3 py-2 text-right">Điểm</th>
+                <th className="px-3 py-2 text-center">Hết hạn</th>
+                <th className="px-3 py-2 text-center">Còn lại</th>
+                <th className="px-3 py-2 text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((c) => {
+                const urgent = c.daysLeft <= 7;
+                return (
+                  <tr key={c.id} className="border-t">
+                    <td className="px-3 py-2 font-bold text-brand-navy">{c.name}</td>
+                    <td className="px-3 py-2 font-mono">{c.phone}</td>
+                    <td className="px-3 py-2 text-right font-bold">{c.points}</td>
+                    <td className="px-3 py-2 text-center text-xs">{fmt(c.validThrough)}</td>
+                    <td className="px-3 py-2 text-center">
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-black text-white"
+                        style={{ background: urgent ? "#dc2626" : "#d97706" }}
+                      >
+                        {c.daysLeft === 0 ? "Hết hôm nay" : `${c.daysLeft} ngày`}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex flex-wrap justify-center gap-1.5">
+                        <Button onClick={() => copyPhone(c.phone)} size="sm" variant="outline" className="h-8 rounded-lg text-xs font-bold">
+                          <Copy className="mr-1 h-3.5 w-3.5" /> Copy SĐT
+                        </Button>
+                        <a href={`tel:${c.phone}`} className="inline-flex h-8 items-center gap-1 rounded-lg bg-brand-navy px-2.5 text-xs font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
+                          <Phone className="h-3.5 w-3.5" /> Gọi
+                        </a>
+                        <a href={`https://zalo.me/${c.phone}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1 rounded-lg bg-[#0068ff] px-2.5 text-xs font-bold text-white hover:opacity-90">
+                          <MessageCircle className="h-3.5 w-3.5" /> Zalo
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 function EditCustomerModal({
   customer,
   staff,
