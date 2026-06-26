@@ -1290,6 +1290,7 @@ function EditCustomerModal({
 
     if (addPoints > 0 && !directChanged) {
       const amountNum = Number(amount.replace(/[^0-9]/g, "") || "0");
+      await renewMembershipIfActive(customer.id);
       const { error: e2 } = await supabase.from("transactions").insert({
         customer_id: customer.id,
         points_change: addPoints,
