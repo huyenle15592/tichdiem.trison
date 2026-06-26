@@ -728,7 +728,44 @@ function CustomersSection({ staff }: { staff: string }) {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Danh sách khách hàng</h1>
+  function exportBackup() {
+    if (items.length === 0) { toast.error("Chưa có khách hàng để sao lưu"); return; }
+    const rows = items.map((c) => {
+      const tier = getTier(c.points, thresholds);
+      const w = cardWindow(activations[c.id]);
+      return {
+        "Họ và Tên Khách Hàng": c.name,
+        "Số Điện Thoại": c.phone,
+        "Ngày Tháng Năm Sinh": c.birth_date ? formatBirth(c.birth_date) : "",
+        "Số Điểm Tích Lũy": c.points,
+        "Hạng Thành Viên": tier.name,
+        "Member Since (Bắt đầu tích điểm)": w.activated ? w.memberSince : "Chưa kích hoạt",
+        "Valid Through (Hết hạn thẻ)": w.activated ? w.validThrough : "Chưa kích hoạt",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 22 }, { wch: 22 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Khách hàng");
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `TriSon-SaoLuu-KhachHang-${stamp}.xlsx`, { bookType: "xlsx" });
+    toast.success(`Đã xuất ${rows.length} khách hàng ra Excel`);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Danh sách khách hàng</h1>
+        <Button
+          type="button"
+          onClick={exportBackup}
+          className="h-12 rounded-xl bg-[#1F7244] px-5 font-bold text-white shadow-[var(--shadow-soft)] hover:bg-[#185a36]"
+        >
+          <FileSpreadsheet className="mr-2 h-5 w-5" />
+          <Download className="mr-2 h-4 w-4" />
+          XUẤT EXCEL SAO LƯU DỮ LIỆU
+        </Button>
+      </div>
 
       <form onSubmit={add} className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
         <div className="mb-3 flex items-center gap-2 font-bold text-brand-navy">
