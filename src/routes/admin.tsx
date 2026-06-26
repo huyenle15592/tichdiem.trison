@@ -34,7 +34,10 @@ import {
   Undo2,
   ShieldAlert,
   Trash2,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const MANAGER_PASSWORD = "TrisonAdmin2026";
 import { formatVnd, getTier, normalizePhone, cardWindow, DEFAULT_THRESHOLDS, type TierThresholds } from "@/lib/loyalty";
