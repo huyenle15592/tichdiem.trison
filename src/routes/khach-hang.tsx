@@ -445,6 +445,10 @@ function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewar
           >
             <Download className="mr-2 h-4 w-4" /> Tải mã QR về điện thoại
           </Button>
+        </div>
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
+          Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
+        </p>
       </div>
 
       <div className="rounded-2xl border border-brand-red/20 bg-card/95 p-5 shadow-[var(--shadow-soft)]">
@@ -495,11 +499,6 @@ function MemberCard({ customer, rewards, recentTx }: { customer: Customer; rewar
         </p>
       </div>
 
-
-        <p className="mt-3 text-xs font-medium text-muted-foreground">
-          Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
-        </p>
-      </div>
 
       <div>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-brand-navy">
