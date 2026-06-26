@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/khach-hang")({
   head: () => ({
     meta: [
       { title: "Tra cứu điểm - Yến sào Trí Sơn" },
