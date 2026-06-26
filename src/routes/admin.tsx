@@ -371,8 +371,16 @@ function PointsActions({ customer, staff, onChanged }: { customer: Customer; sta
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [activatedAt, setActivatedAt] = useState<string | null>(null);
   const tier = getTier(customer.points);
   const points = useMemo(() => Math.floor(Number(amount.replace(/[^0-9]/g, "") || "0") / 100000), [amount]);
+  const win = cardWindow(activatedAt);
+
+  useEffect(() => {
+    let alive = true;
+    fetchActivationDate(customer.id).then((d) => { if (alive) setActivatedAt(d); });
+    return () => { alive = false; };
+  }, [customer.id, customer.points]);
 
   async function commit(type: "add" | "subtract", overridePoints?: number) {
     const pts = overridePoints ?? points;
