@@ -36,9 +36,6 @@ export const Route = createFileRoute("/admin")({
   component: AdminView,
 });
 
-const PASSWORD = "Trison2026";
-const AUTH_KEY = "trison_admin_auth";
-
 type Customer = { id: string; name: string; phone: string; points: number; created_at: string };
 type Transaction = {
   id: string;
@@ -52,34 +49,108 @@ type Transaction = {
 };
 
 function AdminView() {
+  const [checking, setChecking] = useState(true);
   const [authed, setAuthed] = useState(false);
+
   useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem(AUTH_KEY) === "1") setAuthed(true);
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setAuthed(!!data.session);
+      setChecking(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(!!session);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
-  if (!authed) return <LoginGate onOk={() => setAuthed(true)} />;
-  return <AdminShell onLogout={() => { sessionStorage.removeItem(AUTH_KEY); setAuthed(false); }} />;
+
+  if (checking) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-brand-navy text-brand-navy-foreground">
+        <div className="text-sm font-bold opacity-80">Đang kiểm tra phiên đăng nhập…</div>
+      </div>
+    );
+  }
+  if (!authed) return <LoginGate />;
+  return (
+    <AdminShell
+      onLogout={async () => {
+        await supabase.auth.signOut();
+        setAuthed(false);
+      }}
+    />
+  );
 }
 
-function LoginGate({ onOk }: { onOk: () => void }) {
+function LoginGate() {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [show, setShow] = useState(false);
-  const submit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pwd === PASSWORD) { sessionStorage.setItem(AUTH_KEY, "1"); onOk(); }
-    else toast.error("Mật khẩu không đúng");
+    if (!email || pwd.length < 6) {
+      toast.error("Vui lòng nhập email và mật khẩu (ít nhất 6 ký tự)");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+        if (error) throw error;
+        toast.success("Đăng nhập thành công");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: pwd,
+          options: { emailRedirectTo: window.location.origin + "/admin" },
+        });
+        if (error) throw error;
+        toast.success("Tạo tài khoản nhân viên thành công");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Có lỗi xảy ra";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-navy px-4">
       <Toaster position="top-center" richColors />
-      <form onSubmit={submit} className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-[var(--shadow-card)]">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-[var(--shadow-card)]"
+      >
         <div className="mb-6 text-center">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-red text-brand-red-foreground">
             <Lock className="h-7 w-7" />
           </div>
-          <h1 className="mt-4 text-2xl font-black text-brand-navy">Đăng nhập Nhân viên</h1>
+          <h1 className="mt-4 text-2xl font-black text-brand-navy">
+            {mode === "signin" ? "Đăng nhập Nhân viên" : "Tạo tài khoản Nhân viên"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">Yến sào Trí Sơn - Hệ thống quản trị</p>
         </div>
-        <Label className="text-sm font-bold">Mật khẩu cửa hàng</Label>
+
+        <Label className="text-sm font-bold">Email nhân viên</Label>
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-2 h-12 rounded-xl border-2 text-base"
+          placeholder="nhanvien@trison.vn"
+          autoComplete="email"
+          autoFocus
+        />
+
+        <Label className="mt-4 block text-sm font-bold">Mật khẩu</Label>
         <div className="relative mt-2">
           <Input
             type={show ? "text" : "password"}
@@ -87,7 +158,7 @@ function LoginGate({ onOk }: { onOk: () => void }) {
             onChange={(e) => setPwd(e.target.value)}
             className="h-12 rounded-xl border-2 pr-12 text-base"
             placeholder="••••••••"
-            autoFocus
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
           />
           <button
             type="button"
@@ -99,16 +170,37 @@ function LoginGate({ onOk }: { onOk: () => void }) {
           </button>
         </div>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} className="h-4 w-4 accent-brand-red" />
+          <input
+            type="checkbox"
+            checked={show}
+            onChange={(e) => setShow(e.target.checked)}
+            className="h-4 w-4 accent-brand-red"
+          />
           Hiện mật khẩu để xem đúng chưa
         </label>
-        <Button type="submit" className="mt-5 h-12 w-full rounded-xl bg-brand-red text-base font-bold text-brand-red-foreground hover:bg-brand-red/90">
-          Đăng nhập
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="mt-5 h-12 w-full rounded-xl bg-brand-red text-base font-bold text-brand-red-foreground hover:bg-brand-red/90"
+        >
+          {loading ? "Đang xử lý..." : mode === "signin" ? "Đăng nhập" : "Tạo tài khoản"}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
+          className="mt-4 w-full text-center text-sm font-semibold text-brand-navy hover:underline"
+        >
+          {mode === "signin"
+            ? "Chưa có tài khoản? Tạo tài khoản nhân viên mới"
+            : "Đã có tài khoản? Đăng nhập"}
+        </button>
       </form>
     </div>
   );
 }
+
 
 type Section = "dashboard" | "customers" | "history" | "rewards";
 
