@@ -195,7 +195,9 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 };
 
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
-  const tier = getTier(customer.points);
+  const thresholds = useTierThresholds();
+  const tier = getTier(customer.points, thresholds);
+
   const theme = TIER_THEMES[tier.key];
   const progress = tier.next
     ? Math.min(100, ((customer.points - tier.min) / (tier.next - tier.min)) * 100)
