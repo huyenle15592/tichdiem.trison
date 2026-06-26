@@ -693,22 +693,18 @@ function CustomersSection({ staff }: { staff: string }) {
 
   const now = Date.now();
   const minDays = inactivity === "all" ? 0 : Number(inactivity);
-  const withInactivity = items.map((c) => {
-    const last = lastTx[c.id] ?? null;
-    const days = last ? Math.floor((now - new Date(last).getTime()) / 86400000) : null;
-    return { c, last, days };
-  });
-  const searched = withInactivity.filter(({ c }) =>
-    c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase()),
-  );
-  const filtered = searched.filter(({ c }) => inactivity === "all"
-    ? c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase())
-    : false);
-  // For inactivity table: only customers with last tx older than threshold (excludes those never bought when filter is active)
-  const inactiveList = searched
+  const matchesSearch = (c: Customer) =>
+    c.phone.includes(q) || c.name.toLowerCase().includes(q.toLowerCase());
+  const filtered = items.filter(matchesSearch);
+  const inactiveList = items
+    .filter(matchesSearch)
+    .map((c) => {
+      const last = lastTx[c.id] ?? null;
+      const days = last ? Math.floor((now - new Date(last).getTime()) / 86400000) : null;
+      return { c, last, days };
+    })
     .filter(({ days }) => days !== null && days > minDays)
     .sort((a, b) => (b.days ?? 0) - (a.days ?? 0));
-  void filtered;
 
   async function copyPhone(p: string) {
     try {
@@ -718,6 +714,13 @@ function CustomersSection({ staff }: { staff: string }) {
       toast.error("Không thể copy");
     }
   }
+
+  function formatDate(iso: string | null) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+
 
 
   return (
