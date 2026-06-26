@@ -1758,6 +1758,16 @@ function QuickAddPointsModal({
       });
       if (u2) throw u2;
       toast.success(`Đã đổi quà "${r.name}" • -${r.points_required} điểm`);
+      void sendZaloNotification({
+        kind: "redeem",
+        customerId: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        rewardName: r.name,
+        rewardCode: r.code,
+        pointsCost: r.points_required,
+        totalPoints: newPoints,
+      });
       setRedeemCode("");
       onSaved();
     } catch (err) {
