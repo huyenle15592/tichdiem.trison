@@ -368,7 +368,7 @@ function Dashboard({ staff }: { staff: string }) {
 
       <div>
         <h2 className="mb-3 text-lg font-black text-brand-navy">Giao dịch hôm nay (Real-time)</h2>
-        <TransactionList items={todayTx} />
+        <TransactionList items={todayTx} allowVoid onVoided={loadStats} />
       </div>
     </div>
   );
