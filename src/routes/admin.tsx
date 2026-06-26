@@ -23,6 +23,12 @@ import {
   Eye,
   EyeOff,
   ImageIcon,
+  Cake,
+  Copy,
+  Phone,
+  MessageCircle,
+  Pencil,
+  X,
 } from "lucide-react";
 import { formatVnd, getTier, normalizePhone } from "@/lib/loyalty";
 
