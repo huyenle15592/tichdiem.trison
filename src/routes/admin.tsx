@@ -2210,7 +2210,7 @@ function TierMembersSection({ staff }: { staff: string }) {
             Danh sách {tierCards.find((c) => c.key === activeTier)?.name} ({filtered.length})
           </h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
