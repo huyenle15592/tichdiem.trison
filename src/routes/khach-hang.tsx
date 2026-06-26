@@ -81,6 +81,11 @@ function CustomerView() {
       }
       setCustomer(cust);
       setRewards((rws as Reward[]) ?? []);
+      if (cust) {
+        setTimeout(() => {
+          document.getElementById("member-card-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+      }
     } catch (err) {
       toast.error("Không thể tra cứu. Vui lòng thử lại.");
       console.error(err);
