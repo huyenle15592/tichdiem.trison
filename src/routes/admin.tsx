@@ -516,10 +516,14 @@ function CustomersSection() {
   const [newPhone, setNewPhone] = useState("");
   const [newBirth, setNewBirth] = useState("");
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [activations, setActivations] = useState<Record<string, string | null>>({});
 
   async function load() {
     const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
-    setItems((data as Customer[]) ?? []);
+    const list = (data as Customer[]) ?? [];
+    setItems(list);
+    const map = await fetchActivationDates(list.map((c) => c.id));
+    setActivations(map);
   }
   useEffect(() => { load(); }, []);
 
