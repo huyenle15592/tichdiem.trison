@@ -314,6 +314,19 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         {/* Lotus motif */}
         <LotusBg tone={theme.lotus} />
 
+        {/* Real lotus photo decoration — bottom-right */}
+        <img
+          src={lotusCardImg.url}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 right-0 z-0 h-auto w-[38%] max-w-[200px] select-none object-contain"
+          style={{
+            mixBlendMode: tier.key === "diamond" ? "screen" : "multiply",
+            opacity: tier.key === "diamond" ? 0.35 : tier.key === "gold" ? 0.45 : 0.5,
+            transform: "translate(8%, 12%)",
+          }}
+        />
+
         {/* Content */}
         <div className="relative flex h-full flex-col justify-between p-5 md:p-6">
           {/* Top: logo + tier name */}
