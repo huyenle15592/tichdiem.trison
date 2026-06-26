@@ -270,6 +270,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
   const qrRef = useRef<HTMLDivElement | null>(null);
+  const [redeemReward, setRedeemReward] = useState<Reward | null>(null);
 
   function downloadQR() {
     const svg = qrRef.current?.querySelector("svg");
