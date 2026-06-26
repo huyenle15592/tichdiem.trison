@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Search, Gift, Phone, QrCode } from "lucide-react";
+import { useRef, useState } from "react";
+import { Search, Gift, Phone, QrCode, Download, ScrollText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,6 +240,40 @@ const TIER_THEMES: Record<"silver" | "gold" | "diamond", TierTheme> = {
 function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward[] }) {
   const thresholds = useTierThresholds();
   const tier = getTier(customer.points, thresholds);
+  const qrRef = useRef<HTMLDivElement | null>(null);
+
+  function downloadQR() {
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) { toast.error("Không tạo được mã QR"); return; }
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svg64 = btoa(unescape(encodeURIComponent(xml)));
+    const img = new Image();
+    img.onload = () => {
+      const size = 720;
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 40, 40, size - 80, size - 80);
+      c.toBlob((b) => {
+        if (!b) return;
+        const url = URL.createObjectURL(b);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `tri-son-qr-${customer.phone}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        toast.success("Đã tải mã QR về máy");
+      }, "image/png");
+    };
+    img.onerror = () => toast.error("Không tải được mã QR");
+    img.src = `data:image/svg+xml;base64,${svg64}`;
+  }
+
 
   const theme = TIER_THEMES[tier.key];
   const progress = tier.next
@@ -364,8 +398,14 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
               <span>{tier.min} điểm</span>
               <span>{tier.next} điểm</span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Tương đương mức chi tiêu {formatVnd(customer.points * 100000)}
+            <p
+              className="mt-3 text-center text-base font-extrabold leading-snug md:text-lg"
+              style={{ fontFamily: "'Montserrat', sans-serif", color: "var(--brand-red)" }}
+            >
+              Cần chi tiêu thêm: {formatVnd(remaining * 100000)} để lên hạng {tier.key === "silver" ? "Vàng" : "Kim Cương"}
+            </p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Tương đương mức chi tiêu hiện tại: {formatVnd(customer.points * 100000)}
             </p>
           </>
         ) : (
@@ -377,7 +417,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         <div className="mb-3 text-sm font-bold uppercase tracking-wider text-brand-navy">
           Mã QR thẻ thành viên
         </div>
-        <div className="mx-auto inline-block rounded-2xl bg-white p-4 ring-1 ring-border">
+        <div ref={qrRef} className="mx-auto inline-block rounded-2xl bg-white p-4 ring-1 ring-border">
           <QRCodeSVG
             value={`trison:phone:${customer.phone}`}
             size={180}
@@ -385,6 +425,15 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             bgColor="#ffffff"
             fgColor="#0a1e3f"
           />
+        </div>
+        <div className="mt-4">
+          <Button
+            type="button"
+            onClick={downloadQR}
+            className="h-11 rounded-xl bg-brand-navy px-5 text-sm font-bold text-brand-navy-foreground hover:bg-brand-navy/90"
+          >
+            <Download className="mr-2 h-4 w-4" /> Tải mã QR về điện thoại
+          </Button>
         </div>
         <p className="mt-3 text-xs font-medium text-muted-foreground">
           Đưa mã này cho nhân viên quét tại quầy để tích / đổi điểm.
@@ -427,6 +476,43 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
             );
           })}
         </div>
+      </div>
+
+      {/* Rules & member regulations */}
+      <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-soft)]">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-brand-navy">
+          <ScrollText className="h-5 w-5 text-brand-red" /> 📜 Luật tích điểm & Quy định thành viên
+        </h2>
+        <ul className="space-y-3 text-sm leading-relaxed text-foreground">
+          <li>
+            <span className="font-bold text-brand-navy">• Luật tích điểm: </span>
+            Cứ mỗi <span className="font-bold">100.000đ</span> trên hóa đơn mua hàng ={" "}
+            <span className="font-bold text-brand-red">1 điểm</span> thưởng.
+          </li>
+          <li>
+            <span className="font-bold text-brand-navy">• Thời hạn thẻ: </span>
+            Thẻ có giá trị sử dụng trong vòng <span className="font-bold">1 năm (12 tháng)</span> kể từ ngày phát sinh giao dịch tích điểm đầu tiên.
+          </li>
+          <li>
+            <span className="font-bold text-brand-navy">• Quy định mốc hạng:</span>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Bạc</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">Dưới {thresholds.goldMin} điểm</div>
+              </div>
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Vàng</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">
+                  Từ {thresholds.goldMin} - {thresholds.diamondMin - 1} điểm
+                </div>
+              </div>
+              <div className="rounded-xl border bg-muted/40 p-3 text-center">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Hạng Kim Cương</div>
+                <div className="mt-1 text-sm font-extrabold text-brand-navy">Từ {thresholds.diamondMin} điểm trở lên</div>
+              </div>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
   );
