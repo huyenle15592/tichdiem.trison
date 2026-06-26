@@ -35,7 +35,9 @@ function CustomerView() {
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [recentTx, setRecentTx] = useState<RecentTx[]>([]);
   const [searched, setSearched] = useState(false);
+
 
   async function lookupBy(raw: string) {
     const q = raw.trim();
