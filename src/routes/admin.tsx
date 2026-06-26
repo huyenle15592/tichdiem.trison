@@ -2511,29 +2511,95 @@ function TierMembersSection({ staff }: { staff: string }) {
 
 function CustomerHistoryModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
   const [items, setItems] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
       const { data } = await supabase
         .from("transactions")
         .select("*")
         .eq("customer_id", customer.id)
+        .gte("created_at", oneYearAgo.toISOString())
         .order("created_at", { ascending: false });
       setItems((data as Transaction[]) ?? []);
+      setLoading(false);
     })();
   }, [customer.id]);
 
+  function fmtTime(iso: string) {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())} - ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  }
+  function fmtMoney(n: number | null) {
+    const v = n ?? 0;
+    return v.toLocaleString("vi-VN") + "đ";
+  }
+  function typeLabel(t: Transaction) {
+    const reason = (t.reason ?? "").toUpperCase();
+    if (t.type === "void" || reason.includes("[ĐÃ HỦY")) {
+      return { text: "Đã hủy do nhập sai", cls: "bg-red-100 text-red-700 border border-red-300" };
+    }
+    if (t.type === "redeem" || t.points_change < 0) {
+      return { text: "Đổi quà tặng", cls: "bg-orange-100 text-orange-700 border border-orange-300" };
+    }
+    return { text: "Cộng điểm mua hàng", cls: "bg-emerald-100 text-emerald-700 border border-emerald-300" };
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-t-2xl bg-card shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose} style={{ fontFamily: "Montserrat, ui-sans-serif, system-ui, sans-serif" }}>
+      <div className="max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-t-2xl bg-card shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b bg-brand-navy px-5 py-4 text-brand-navy-foreground">
           <div>
-            <div className="text-xs font-bold uppercase opacity-80">Lịch sử mua hàng</div>
+            <div className="text-xs font-bold uppercase tracking-wider opacity-80">Lịch sử mua hàng · 12 tháng gần nhất</div>
             <div className="text-lg font-black">{customer.name} · {customer.phone}</div>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-white/10"><X className="h-5 w-5" /></button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto p-4">
-          <TransactionList items={items} />
+        <div className="max-h-[75vh] overflow-auto p-4">
+          {loading ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Đang tải lịch sử...</div>
+          ) : items.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Chưa có giao dịch nào trong 1 năm gần đây.</div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="w-full text-sm" style={{ fontFamily: "Montserrat, ui-sans-serif, system-ui, sans-serif" }}>
+                <thead className="bg-muted/60 text-xs font-bold uppercase tracking-wider text-brand-navy">
+                  <tr>
+                    <th className="whitespace-nowrap px-3 py-3 text-left">Thời gian</th>
+                    <th className="whitespace-nowrap px-3 py-3 text-left">Loại hoạt động</th>
+                    <th className="px-3 py-3 text-left">Nội dung / Sản phẩm</th>
+                    <th className="whitespace-nowrap px-3 py-3 text-right">Số tiền hóa đơn</th>
+                    <th className="whitespace-nowrap px-3 py-3 text-right">Biến động điểm</th>
+                    <th className="whitespace-nowrap px-3 py-3 text-left">Người thực hiện</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((t) => {
+                    const lbl = typeLabel(t);
+                    const isVoid = t.type === "void" || (t.reason ?? "").toUpperCase().includes("[ĐÃ HỦY");
+                    const pos = t.points_change > 0;
+                    return (
+                      <tr key={t.id} className="border-t border-border hover:bg-muted/30">
+                        <td className="whitespace-nowrap px-3 py-3 font-mono text-xs text-foreground/80">{fmtTime(t.created_at)}</td>
+                        <td className="whitespace-nowrap px-3 py-3">
+                          <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-bold ${lbl.cls}`}>{lbl.text}</span>
+                        </td>
+                        <td className="px-3 py-3 text-foreground/90">{t.reason || <span className="text-muted-foreground italic">—</span>}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-right font-semibold text-brand-navy">{fmtMoney(t.amount)}</td>
+                        <td className={`whitespace-nowrap px-3 py-3 text-right font-black ${isVoid ? "text-red-600 line-through" : pos ? "text-emerald-600" : "text-orange-600"}`}>
+                          {pos ? "+" : ""}{t.points_change}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-3 text-foreground/80">{t.staff_name || <span className="text-muted-foreground italic">—</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
