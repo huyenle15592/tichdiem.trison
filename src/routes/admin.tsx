@@ -725,23 +725,25 @@ function CustomersSection({ staff }: { staff: string }) {
 
 function HistorySection() {
   const [items, setItems] = useState<Transaction[]>([]);
+  async function reload() {
+    const { data } = await supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(200);
+    setItems((data as Transaction[]) ?? []);
+  }
   useEffect(() => {
-    supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(200).then(({ data }) => {
-      setItems((data as Transaction[]) ?? []);
-    });
+    reload();
     const ch = supabase.channel("hist")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, (p) => {
-        setItems((prev) => [p.new as Transaction, ...prev]);
-      }).subscribe();
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => reload())
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-black text-brand-navy md:text-3xl">Lịch sử giao dịch</h1>
-      <TransactionList items={items} />
+      <TransactionList items={items} allowVoid onVoided={reload} />
     </div>
   );
 }
+
 
 type Reward = { id: string; name: string; description: string | null; points_required: number; active: boolean; image_url: string | null };
 
