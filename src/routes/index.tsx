@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Crown, ShieldCheck, ArrowRight } from "lucide-react";
-import trisonLogo from "@/assets/trison-logo-transparent.png.asset.json";
+import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 
 export const Route = createFileRoute("/")({
@@ -29,8 +29,8 @@ function PortalView() {
           <img
             src={trisonLogo.url}
             alt="Yến sào Trí Sơn"
-            className="h-24 w-auto md:h-40"
-            loading="eager"
+            className="h-20 w-auto md:h-28"
+            style={{ mixBlendMode: "multiply" }}
           />
         </div>
         <h1 className="mt-9 text-4xl font-extrabold leading-tight tracking-tight text-brand-navy md:mt-12 md:text-6xl">
