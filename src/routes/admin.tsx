@@ -495,6 +495,8 @@ function CustomersSection() {
   const [q, setQ] = useState("");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [newBirth, setNewBirth] = useState("");
+  const [editing, setEditing] = useState<Customer | null>(null);
 
   async function load() {
     const { data } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
@@ -506,10 +508,15 @@ function CustomersSection() {
     e.preventDefault();
     const phone = normalizePhone(newPhone);
     if (!newName.trim() || phone.length < 8) { toast.error("Vui lòng nhập đầy đủ Tên và SĐT hợp lệ"); return; }
-    const { error } = await supabase.from("customers").insert({ name: newName.trim(), phone, points: 0 });
+    const { error } = await supabase.from("customers").insert({
+      name: newName.trim(),
+      phone,
+      points: 0,
+      birth_date: newBirth || null,
+    });
     if (error) { toast.error(error.message); return; }
     toast.success("Đã thêm khách hàng");
-    setNewName(""); setNewPhone(""); load();
+    setNewName(""); setNewPhone(""); setNewBirth(""); load();
   }
 
   async function onExcel(e: React.ChangeEvent<HTMLInputElement>) {
@@ -517,8 +524,15 @@ function CustomersSection() {
     if (!file) return;
     const text = await file.text();
     const rows = text.split(/\r?\n/).map((r) => r.split(",").map((c) => c.trim())).filter((r) => r.length >= 2 && r[0] && r[1]);
-    const recs = rows.map(([name, phone, points]) => ({ name, phone: normalizePhone(phone), points: Number(points) || 0 })).filter((r) => r.phone.length >= 8);
-    if (recs.length === 0) { toast.error("File trống hoặc sai định dạng (cần: tên,SĐT,điểm)"); return; }
+    const recs = rows
+      .map(([name, phone, points, birth]) => ({
+        name,
+        phone: normalizePhone(phone),
+        points: Number(points) || 0,
+        birth_date: birth && /^\d{4}-\d{2}-\d{2}$/.test(birth) ? birth : null,
+      }))
+      .filter((r) => r.phone.length >= 8);
+    if (recs.length === 0) { toast.error("File trống hoặc sai định dạng (cần: tên,SĐT,điểm,ngày sinh)"); return; }
     const { error } = await supabase.from("customers").upsert(recs, { onConflict: "phone" });
     if (error) toast.error(error.message);
     else toast.success(`Đã nhập ${recs.length} khách hàng`);
@@ -536,17 +550,29 @@ function CustomersSection() {
         <div className="mb-3 flex items-center gap-2 font-bold text-brand-navy">
           <UserPlus className="h-5 w-5" /> Thêm khách hàng mới
         </div>
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-          <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Họ và tên" className="h-12 rounded-xl border-2" />
-          <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="Số điện thoại" className="h-12 rounded-xl border-2" />
-          <Button type="submit" className="h-12 rounded-xl bg-brand-navy px-6 font-bold text-brand-navy-foreground">Thêm</Button>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">Họ và tên</Label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nguyễn Văn A" className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">Số điện thoại</Label>
+            <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="09xxxxxxxx" className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div>
+            <Label className="text-xs font-bold text-muted-foreground">🎂 Ngày sinh nhật</Label>
+            <Input type="date" value={newBirth} onChange={(e) => setNewBirth(e.target.value)} className="mt-1 h-12 rounded-xl border-2" />
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" className="h-12 w-full rounded-xl bg-brand-navy font-bold text-brand-navy-foreground">Thêm khách hàng</Button>
+          </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-brand-navy/30 px-4 text-sm font-bold text-brand-navy hover:bg-accent">
             <Upload className="h-4 w-4" /> Tải lên file Excel/CSV khách cũ
             <input type="file" accept=".csv,.txt" className="hidden" onChange={onExcel} />
           </label>
-          <p className="text-xs text-muted-foreground">Định dạng CSV: <code>tên,SĐT,điểm</code></p>
+          <p className="text-xs text-muted-foreground">Định dạng CSV: <code>tên,SĐT,điểm,ngày sinh (YYYY-MM-DD)</code></p>
         </div>
       </form>
 
@@ -562,15 +588,23 @@ function CustomersSection() {
             const tier = getTier(c.points);
             return (
               <li key={c.id} className="flex items-center justify-between gap-3 p-4">
-                <div>
+                <div className="min-w-0">
                   <div className="font-bold">{c.name}</div>
                   <div className="text-sm font-mono text-muted-foreground">{c.phone}</div>
+                  {c.birth_date && (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      🎂 {formatBirth(c.birth_date)}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: tier.gradient, color: tier.text }}>
+                <div className="flex items-center gap-2">
+                  <span className="hidden rounded-full px-3 py-1 text-xs font-bold sm:inline" style={{ background: tier.gradient, color: tier.text }}>
                     {tier.name}
                   </span>
                   <span className="text-xl font-black text-brand-navy">{c.points}đ</span>
+                  <Button onClick={() => setEditing(c)} size="sm" variant="ghost" className="text-brand-navy">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 </div>
               </li>
             );
@@ -578,6 +612,14 @@ function CustomersSection() {
           {filtered.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">Không có khách hàng nào.</li>}
         </ul>
       </div>
+
+      {editing && (
+        <EditCustomerModal
+          customer={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load(); }}
+        />
+      )}
     </div>
   );
 }
