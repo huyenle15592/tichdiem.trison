@@ -781,7 +781,7 @@ function CustomersSection({ staff }: { staff: string }) {
       return {
         "Họ và Tên Khách Hàng": c.name,
         "Số Điện Thoại": c.phone,
-        "Ngày Tháng Năm Sinh": c.birth_date ? formatBirth(c.birth_date) : "",
+        "Ngày / Tháng Sinh": formatBirth(c),
         "Số Điểm Tích Lũy": c.points,
         "Hạng Thành Viên": tier.name,
         "Member Since (Bắt đầu tích điểm)": w.activated ? w.memberSince : "Chưa kích hoạt",
