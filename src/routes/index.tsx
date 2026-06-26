@@ -99,40 +99,40 @@ function PortalCard({
   return (
     <Link
       to={to}
-      className="group relative block overflow-hidden rounded-3xl border-2 bg-card p-7 text-left shadow-[var(--shadow-soft)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 md:p-9"
+      className="group relative block overflow-hidden rounded-[28px] border border-border/70 bg-white p-8 text-left transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:p-10"
       style={{
-        borderColor,
+        boxShadow: "var(--shadow-float)",
         // @ts-expect-error custom prop
         "--tw-ring-color": borderColor,
       }}
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
         style={{
           background: isNavy
-            ? "radial-gradient(600px 200px at 50% 0%, oklch(0.27 0.09 260 / 0.08), transparent 70%)"
-            : "radial-gradient(600px 200px at 50% 0%, oklch(0.55 0.22 27 / 0.08), transparent 70%)",
+            ? "radial-gradient(700px 240px at 50% 0%, oklch(0.27 0.09 260 / 0.06), transparent 70%)"
+            : "radial-gradient(700px 240px at 50% 0%, oklch(0.55 0.22 27 / 0.06), transparent 70%)",
         }}
       />
       <div className="relative flex flex-col items-center text-center">
         <div
-          className="grid h-24 w-24 place-items-center rounded-2xl shadow-[var(--shadow-soft)] transition-transform duration-300 group-hover:scale-110 md:h-28 md:w-28"
-          style={{ background: iconBg, color: iconColor }}
+          className="grid h-24 w-24 place-items-center rounded-2xl transition-transform duration-500 group-hover:scale-110 md:h-28 md:w-28"
+          style={{ background: iconBg, color: iconColor, boxShadow: "var(--shadow-soft)" }}
         >
           {icon}
         </div>
-        <div className="mt-5 text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+        <div className="mt-6 text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
           {eyebrow}
         </div>
-        <h2 className={`mt-2 text-2xl font-black leading-tight md:text-3xl ${titleClass}`}>
+        <h2 className={`mt-3 text-2xl font-extrabold leading-tight tracking-tight md:text-[28px] ${titleClass}`}>
           {title}
         </h2>
         <p className="mt-3 max-w-sm text-sm font-medium leading-relaxed text-muted-foreground md:text-base">
           {description}
         </p>
         <div
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow-soft)] transition-all duration-300 group-hover:gap-3 group-hover:shadow-[var(--shadow-card)] md:text-base"
-          style={{ background: borderColor }}
+          className="mt-7 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-base font-bold text-white transition-all duration-300 group-hover:gap-3 md:text-[17px]"
+          style={{ background: borderColor, boxShadow: "var(--shadow-soft)" }}
         >
           {cta}
           <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
