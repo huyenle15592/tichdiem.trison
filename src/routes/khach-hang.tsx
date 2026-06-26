@@ -10,7 +10,7 @@ import { LotusBg } from "@/components/lotus-bg";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { QrScannerModal } from "@/components/qr-scanner";
-import { lookupCustomerByPhone } from "@/lib/customer-lookup.functions";
+
 import trisonLogo from "@/assets/trison-logo.png.asset.json";
 import { LotusScene } from "@/components/lotus-scene";
 import { QRCodeSVG } from "qrcode.react";
@@ -31,26 +31,54 @@ type Customer = { id: string; name: string; phone: string; points: number; creat
 type Reward = { id: string; name: string; description: string | null; points_required: number; image_url: string | null };
 
 function CustomerView() {
-  const [phone, setPhone] = useState("");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [searched, setSearched] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
-  async function lookupBy(p: string) {
-    if (p.length < 8) {
-      toast.error("Số điện thoại / mã QR không hợp lệ");
+  async function lookupBy(raw: string) {
+    const q = raw.trim();
+    if (q.length < 2) {
+      toast.error("Vui lòng nhập số điện thoại hoặc họ tên");
       return;
     }
     setLoading(true);
     setSearched(true);
     try {
-      const [cust, { data: rws }] = await Promise.all([
-        lookupCustomerByPhone({ data: { phone: p } }),
+      const digits = q.replace(/\D/g, "");
+      const phoneCandidate = digits.length >= 8 ? normalizePhone(q) : null;
+
+      // Build OR filter: match phone OR name (case-insensitive contains)
+      const safe = q.replace(/[,()]/g, " ");
+      const orParts: string[] = [`name.ilike.%${safe}%`];
+      if (phoneCandidate) orParts.unshift(`phone.eq.${phoneCandidate}`);
+
+      const [{ data: custRows, error: custErr }, { data: rws }] = await Promise.all([
+        supabase
+          .from("customers")
+          .select("id, name, phone, points, created_at")
+          .or(orParts.join(","))
+          .limit(1),
         supabase.from("rewards").select("*").eq("active", true).order("points_required"),
       ]);
-      setCustomer((cust as Customer) ?? null);
+      if (custErr) throw custErr;
+
+      const row = (custRows && custRows[0]) || null;
+      let cust: Customer | null = null;
+      if (row) {
+        const { data: firstAdd } = await supabase
+          .from("transactions")
+          .select("created_at")
+          .eq("customer_id", row.id)
+          .gt("points_change", 0)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        cust = { ...(row as any), activated_at: (firstAdd?.created_at as string | undefined) ?? null };
+      }
+      setCustomer(cust);
       setRewards((rws as Reward[]) ?? []);
     } catch (err) {
       toast.error("Không thể tra cứu. Vui lòng thử lại.");
@@ -62,17 +90,17 @@ function CustomerView() {
 
   async function lookup(e?: React.FormEvent) {
     e?.preventDefault();
-    await lookupBy(normalizePhone(phone));
+    await lookupBy(query);
   }
 
   function handleQrResult(text: string) {
     setQrOpen(false);
-    // Accept raw phone, or formats like "tel:0907..." or "trison:phone:0907..."
     const cleaned = text.trim().replace(/^tel:/i, "").replace(/^trison:phone:/i, "");
     const p = normalizePhone(cleaned);
-    setPhone(p);
+    setQuery(p);
     lookupBy(p);
   }
+
 
   return (
     <div className="relative min-h-screen bg-transparent">
@@ -98,41 +126,43 @@ function CustomerView() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-6 md:py-10">
-        <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
-          <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Nhập số điện thoại của bạn..."
-                className="h-14 rounded-2xl border-2 pl-12 text-base font-semibold"
-              />
+        {!customer && (
+          <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
+            <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Nhập Số điện thoại HOẶC Họ và tên của bạn..."
+                  className="h-14 rounded-2xl border-2 pl-12 text-base font-semibold"
+                />
+              </div>
+              <Button type="submit" disabled={loading} className="h-14 rounded-2xl bg-brand-navy px-7 text-base font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
+                <Search className="mr-2 h-5 w-5" />
+                {loading ? "Đang tra..." : "Tra cứu điểm"}
+              </Button>
             </div>
-            <Button type="submit" disabled={loading} className="h-14 rounded-2xl bg-brand-navy px-7 text-base font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
-              <Search className="mr-2 h-5 w-5" />
-              {loading ? "Đang tra..." : "Tra cứu điểm"}
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <Button
+              type="button"
+              onClick={() => setQrOpen(true)}
+              variant="outline"
+              className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
+            >
+              <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
             </Button>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <Button
-            type="button"
-            onClick={() => setQrOpen(true)}
-            variant="outline"
-            className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
-          >
-            <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
-          </Button>
-        </form>
+          </form>
+        )}
 
         <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
+
 
         {searched && !loading && !customer && (
           <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
