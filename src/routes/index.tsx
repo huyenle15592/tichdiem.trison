@@ -19,13 +19,7 @@ export const Route = createFileRoute("/")({
 
 function PortalView() {
   return (
-    <div
-      className="relative min-h-screen"
-      style={{
-        background:
-          "radial-gradient(1200px 600px at 10% -10%, oklch(0.95 0.04 27 / 0.6), transparent 60%), radial-gradient(1000px 500px at 110% 10%, oklch(0.9 0.05 260 / 0.5), transparent 60%), oklch(0.97 0.005 260)",
-      }}
-    >
+    <div className="relative min-h-screen bg-transparent">
       <LotusScene />
       <header className="relative mx-auto max-w-6xl px-5 pt-8 pb-2 text-center md:pt-14">
         <img
