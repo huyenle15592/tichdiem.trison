@@ -157,6 +157,33 @@ export type Database = {
         }
         Relationships: []
       }
+      zns_settings: {
+        Row: {
+          access_token: string
+          enabled: boolean
+          id: string
+          template_id_add: string
+          template_id_redeem: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string
+          enabled?: boolean
+          id?: string
+          template_id_add?: string
+          template_id_redeem?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          enabled?: boolean
+          id?: string
+          template_id_add?: string
+          template_id_redeem?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
