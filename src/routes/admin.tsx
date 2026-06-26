@@ -1710,6 +1710,15 @@ function QuickAddPointsModal({
     setBusy(false);
     if (e2) { toast.error("Lỗi giao dịch: " + e2.message); return; }
     toast.success(`+${points} điểm cho ${customer.name}`);
+    void sendZaloNotification({
+      kind: "add",
+      customerId: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      pointsAdded: points,
+      totalPoints: newPoints,
+      txDate: new Date(),
+    });
     onSaved();
   }
 
