@@ -726,8 +726,6 @@ function CustomersSection({ staff }: { staff: string }) {
 
 
 
-  return (
-    <div className="space-y-5">
   function exportBackup() {
     if (items.length === 0) { toast.error("Chưa có khách hàng để sao lưu"); return; }
     const rows = items.map((c) => {
