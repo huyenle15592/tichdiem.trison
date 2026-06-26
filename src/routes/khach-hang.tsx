@@ -498,7 +498,7 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
         <h2 className="mb-3 flex items-center gap-2 text-lg font-black text-brand-navy">
           <Gift className="h-5 w-5 text-brand-red" /> Đổi quà ưu đãi
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {rewards.map((r) => {
             const enough = customer.points >= r.points_required;
             return (
