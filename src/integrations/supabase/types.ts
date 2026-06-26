@@ -71,6 +71,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_settings: {
+        Row: {
+          diamond_min: number
+          gold_min: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          diamond_min?: number
+          gold_min?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          diamond_min?: number
+          gold_min?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number | null
