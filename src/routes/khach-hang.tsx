@@ -126,41 +126,43 @@ function CustomerView() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-6 md:py-10">
-        <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
-          <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="tel"
-                inputMode="numeric"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Nhập số điện thoại của bạn..."
-                className="h-14 rounded-2xl border-2 pl-12 text-base font-semibold"
-              />
+        {!customer && (
+          <form onSubmit={lookup} className="rounded-3xl border bg-card p-5 shadow-[var(--shadow-card)]">
+            <label className="mb-2 block text-sm font-bold text-brand-navy">Tra cứu điểm thành viên</label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Nhập Số điện thoại HOẶC Họ và tên của bạn..."
+                  className="h-14 rounded-2xl border-2 pl-12 text-base font-semibold"
+                />
+              </div>
+              <Button type="submit" disabled={loading} className="h-14 rounded-2xl bg-brand-navy px-7 text-base font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
+                <Search className="mr-2 h-5 w-5" />
+                {loading ? "Đang tra..." : "Tra cứu điểm"}
+              </Button>
             </div>
-            <Button type="submit" disabled={loading} className="h-14 rounded-2xl bg-brand-navy px-7 text-base font-bold text-brand-navy-foreground hover:bg-brand-navy/90">
-              <Search className="mr-2 h-5 w-5" />
-              {loading ? "Đang tra..." : "Tra cứu điểm"}
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <Button
+              type="button"
+              onClick={() => setQrOpen(true)}
+              variant="outline"
+              className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
+            >
+              <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
             </Button>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">hoặc</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <Button
-            type="button"
-            onClick={() => setQrOpen(true)}
-            variant="outline"
-            className="mt-3 h-14 w-full rounded-2xl border-2 border-brand-red/30 text-base font-bold text-brand-red hover:bg-brand-red/5"
-          >
-            <QrCode className="mr-2 h-5 w-5" /> Quét mã QR thẻ thành viên
-          </Button>
-        </form>
+          </form>
+        )}
 
         <QrScannerModal open={qrOpen} onClose={() => setQrOpen(false)} onResult={handleQrResult} />
+
 
         {searched && !loading && !customer && (
           <div className="mt-6 rounded-2xl border border-dashed bg-card p-8 text-center">
