@@ -51,6 +51,23 @@ function CustomerView() {
     return () => { supabase.removeChannel(channel); };
   }, [customer]);
 
+  // Realtime: lắng nghe thay đổi điểm của chính khách hàng (đổi quà, cộng điểm)
+  useEffect(() => {
+    if (!customer) return;
+    const channel = supabase
+      .channel(`customer-${customer.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "customers", filter: `id=eq.${customer.id}` },
+        (payload) => {
+          const next = payload.new as { points: number; name: string; phone: string };
+          setCustomer((prev) => (prev ? { ...prev, points: next.points, name: next.name, phone: next.phone } : prev));
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [customer?.id]);
+
 
 
   async function lookupBy(raw: string) {
