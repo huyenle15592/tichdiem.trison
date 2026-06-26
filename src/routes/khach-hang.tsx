@@ -199,8 +199,10 @@ function MemberCard({ customer, rewards }: { customer: Customer; rewards: Reward
     : 100;
   const remaining = tier.next ? tier.next - customer.points : 0;
 
-  const memberSince = formatVnDate(customer.created_at);
-  const validThrough = formatVnDate(addOneYearIso(customer.created_at));
+  const win = cardWindow(customer.activated_at);
+  const memberSince = win.memberSince;
+  const validThrough = win.validThrough;
+  const activated = win.activated;
 
   // gold-style sparkle texture for Gold tier
   const goldTexture =
