@@ -233,8 +233,8 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       <div className="md:hidden">
         <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between bg-sidebar px-4 py-3 text-sidebar-foreground">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-red">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-0.5">
+              <img src={trisonLogo.url} alt="Yến sào Trí Sơn" className="h-full w-full object-contain" />
             </div>
             <span className="text-sm font-black">TRÍ SƠN ADMIN</span>
           </div>
